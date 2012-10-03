@@ -185,8 +185,19 @@ def _attack(params):
             key_filename=_get_pem_path(params['key_name']))
 
         print 'Bee %i is firing his machine gun. Bang bang!' % params['i']
+        cmd = []
+        cmd.append('ab')
+        cmd.append('-r')
+        cmd.append('-n %(num_requests)s' % params)
+        cmd.append('-c %(concurrent_requests)s' % params)
+        cmd.append('-C "sessionid=NotARealSessionID"')
 
-        stdin, stdout, stderr = client.exec_command('ab -r -n %(num_requests)s -c %(concurrent_requests)s -C "sessionid=NotARealSessionID" "%(url)s"' % params)
+        if params.get('keepalive', False):
+            cmd.append('-k')
+
+        cmd.append('"%(url)s"' % params)
+
+        stdin, stdout, stderr = client.exec_command(' '.join(cmd))
 
         response = {}
 
@@ -269,8 +280,8 @@ def _print_results(results):
         print 'Mission Assessment: Target severely compromised.'
     else:
         print 'Mission Assessment: Swarm annihilated target.'
-    
-def attack(url, n, c):
+
+def attack(url, n, c, keepalive):
     """
     Test the root url of this site.
     """
@@ -296,6 +307,7 @@ def attack(url, n, c):
     instance_count = len(instances)
     requests_per_instance = int(float(n) / instance_count)
     connections_per_instance = int(float(c) / instance_count)
+    keepalive = bool(keepalive)
 
     print 'Each of %i bees will fire %s rounds, %s at a time.' % (instance_count, requests_per_instance, connections_per_instance)
 
@@ -311,6 +323,7 @@ def attack(url, n, c):
             'num_requests': requests_per_instance,
             'username': username,
             'key_name': key_name,
+            'keepalive': keepalive
         })
 
     print 'Stinging URL so it will be cached for the attack.'

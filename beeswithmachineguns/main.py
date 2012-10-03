@@ -51,12 +51,12 @@ commands:
   report  Report the status of the load testing servers.
     """)
 
-    up_group = OptionGroup(parser, "up", 
+    up_group = OptionGroup(parser, "up",
         """In order to spin up new servers you will need to specify at least the -k command, which is the name of the EC2 keypair to use for creating and connecting to the new servers. The bees will expect to find a .pem file with this name in ~/.ssh/.""")
 
     # Required
     up_group.add_option('-k', '--key',  metavar="KEY",  nargs=1,
-                        action='store', dest='key', type='string', 
+                        action='store', dest='key', type='string',
                         help="The ssh key pair name to use to connect to the new servers.")
 
     up_group.add_option('-s', '--servers', metavar="SERVERS", nargs=1,
@@ -77,7 +77,7 @@ commands:
 
     parser.add_option_group(up_group)
 
-    attack_group = OptionGroup(parser, "attack", 
+    attack_group = OptionGroup(parser, "attack",
             """Beginning an attack requires only that you specify the -u option with the URL you wish to target.""")
 
     # Required
@@ -91,6 +91,9 @@ commands:
     attack_group.add_option('-c', '--concurrent', metavar="CONCURRENT", nargs=1,
                         action='store', dest='concurrent', type='int', default=100,
                         help="The number of concurrent connections to make to the target (default: 100).")
+    attack_group.add_option('-k', '--keepalive', metavar="KEEPALIVE",
+                            action='store_true', dest='keepalive', default=False,
+                            help='Whether or not to use ab keepalive (default: False)')
 
     parser.add_option_group(attack_group)
 
@@ -116,7 +119,7 @@ commands:
         if NO_TRAILING_SLASH_REGEX.match(options.url):
             parser.error('It appears your URL lacks a trailing slash, this will disorient the bees. Please try again with a trailing slash.')
 
-        bees.attack(options.url, options.number, options.concurrent)
+        bees.attack(options.url, options.number, options.concurrent, options.keepalive)
     elif command == 'down':
         bees.down()
     elif command == 'report':
