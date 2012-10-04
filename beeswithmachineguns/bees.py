@@ -270,12 +270,14 @@ def attack(url, n, c, keepalive, output_type):
 
     aggregate_result = get_aggregate_result(complete_bees)
 
-    if output_type.startswith('csv'):
+    if output_type=='csvh':
+        print >> sys.stdout, ','.join(aggregate_result._fields)
+        output_type = 'csv'
+
+    if output_type=='csv':
         # it is presumed that csv output should be suppressed when some 
         # workers failed.
         if not timeout_bees and not exception_bees:
-            if output_type=='csvh':
-                print >> sys.stdout, ','.join(aggregate_result._fields)
             print >> sys.stdout, ','.join(map(str,aggregate_result))
     else:
         aggregate_result.print_text(sys.stdout)
