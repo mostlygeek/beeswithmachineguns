@@ -9,8 +9,40 @@ import re
 
 class Tester(object):
     """
+    Abstract base class for tester implementations. 
     """
-    pass
+
+    def get_command(self, num_requests, concurrent_requests, is_keepalive, url):
+        """
+        Generate a command line to run a test using this tester.
+        
+        @param num_requests: number of requests this tester should issue
+        @type num_requests: int
+        @param concurrent_requests:  how many requests to issue at a time
+        @type concurrent_requests: int
+        @param is_keepalive: whether to use http keepalive
+        @type is_keepalive: boolean
+        @param url: the url to issue requests to
+        @type url: str
+        @return: the assembled command line
+        @rtype: str
+        """
+        raise NotImplementedError
+        
+
+    def parse_output(self, output):
+        """
+        Create a L{TesterResult} by extracting values from the output of the tester
+        command.
+        
+        This method will return None if the supplied output does not contain 
+        sufficient data to generate a meaningful result.
+        
+        @param output: the captured output (stdout) from the tester command
+        @type output: str
+        @return: L{TesterResult} with the extracted data, or None
+        """
+        raise NotImplementedError
 
 
 _result_keys = [
@@ -28,11 +60,16 @@ _result_keys = [
 
 class TesterResult(namedtuple('TesterResult', _result_keys)):
     """
+    Test result container, which works for both individual and aggregated
+    results.  The individual fields map directly to ab results.  All values 
+    are stored as floats.
     """
     
     def print_text(self, out):
         """
         Print summarized load-testing result to console.
+        
+        @param out: file-like, open for writing, into which output will be printed.
         """
     
         print >> out, 'Concurrency Level:\t%i' % self.concurrency
@@ -48,6 +85,7 @@ class TesterResult(namedtuple('TesterResult', _result_keys)):
 
 def get_aggregate_result(results):
     """
+    Given a sequence of TestResults, generate a single aggregate TestResult.
     """
     
     ar = {}
@@ -69,7 +107,7 @@ def get_aggregate_result(results):
 
 class ABTester(Tester):
     """
-    Tester implementation for ab (apache benchmarking tool)
+    Tester implementation for ab (apache benchmarking tool).
     """
 
 
@@ -93,6 +131,11 @@ class ABTester(Tester):
 
     def _parse_measure(self, expression, content, default=''):
         """
+        Regular expression scraping helper
+        
+        @param expression: regular expression
+        @param content: the output to scrape
+        @param default: if the expression doesn't capture anything, return this
         """
         s = re.search(expression, content)
         return (s is not None and s.group(1)) or default
