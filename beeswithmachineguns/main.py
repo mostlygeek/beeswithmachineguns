@@ -120,7 +120,6 @@ commands:
     
     if options.verbose:
         import logging
-        logging.basicConfig(level=logging.INFO)
         logging.basicConfig(level=logging.DEBUG)
 
 
@@ -128,8 +127,8 @@ commands:
         if not options.key:
             parser.error('To spin up new instances you need to specify a key-pair name with -k')
 
-        if options.group == 'default':
-            print 'New bees will use the "default" EC2 security group. Please note that port 22 (SSH) is not normally open on this group. You will need to use to the EC2 tools to open it before you will be able to attack.'
+        #if options.group == 'default':
+        #    print 'New bees will use the "default" EC2 security group. Please note that port 22 (SSH) is not normally open on this group. You will need to use to the EC2 tools to open it before you will be able to attack.'
 
         bees.up(options.servers, options.group, options.zone, options.instance, options.login, options.key)
     elif command == 'attack':
