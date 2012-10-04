@@ -24,6 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+import logging
 from multiprocessing import Pool
 import os
 import re
@@ -55,7 +56,7 @@ def _read_server_list():
         text = f.read()
         instance_ids = text.split('\n')
 
-        print 'Read %i bees from the roster.' % len(instance_ids)
+        logging.info('Read %i bees from the roster.' % len(instance_ids))
 
     return (username, key_name, instance_ids)
 
@@ -80,7 +81,7 @@ def up(count, group, zone, image_id, username, key_name):
     existing_username, existing_key_name, instance_ids = _read_server_list()
 
     if instance_ids:
-        print 'Bees are already assembled and awaiting orders.'
+        logging.info('Bees are already assembled and awaiting orders.')
         return
 
     count = int(count)
@@ -88,14 +89,14 @@ def up(count, group, zone, image_id, username, key_name):
     pem_path = _get_pem_path(key_name)
 
     if not os.path.isfile(pem_path):
-        print 'No key file found at %s' % pem_path
+        logging.info('No key file found at %s' % pem_path)
         return
 
-    print 'Connecting to the hive.'
+    logging.info('Connecting to the hive.')
 
     ec2_connection = boto.connect_ec2()
 
-    print 'Attempting to call up %i bees.' % count
+    logging.info('Attempting to call up %i bees.' % count)
 
     reservation = ec2_connection.run_instances(
         image_id=image_id,
@@ -106,25 +107,25 @@ def up(count, group, zone, image_id, username, key_name):
         instance_type=EC2_INSTANCE_TYPE,
         placement=zone)
 
-    print 'Waiting for bees to load their machine guns...'
+    logging.info('Waiting for bees to load their machine guns...')
 
     instance_ids = []
 
     for instance in reservation.instances:
         while instance.state != 'running':
-            print '.'
+            logging.info('.')
             time.sleep(5)
             instance.update()
 
         instance_ids.append(instance.id)
 
-        print 'Bee %s is ready for the attack.' % instance.id
+        logging.info('Bee %s is ready for the attack.' % instance.id)
 
     ec2_connection.create_tags(instance_ids, { "Name": "a bee!" })
 
     _write_server_list(username, key_name, reservation.instances)
 
-    print 'The swarm has assembled %i bees.' % len(reservation.instances)
+    logging.info('The swarm has assembled %i bees.' % len(reservation.instances))
 
 def report():
     """
@@ -133,7 +134,7 @@ def report():
     username, key_name, instance_ids = _read_server_list()
 
     if not instance_ids:
-        print 'No bees have been mobilized.'
+        logging.info('No bees have been mobilized.')
         return
 
     ec2_connection = boto.connect_ec2()
@@ -146,7 +147,7 @@ def report():
         instances.extend(reservation.instances)
 
     for instance in instances:
-        print 'Bee %s: %s @ %s' % (instance.id, instance.state, instance.ip_address)
+        logging.info('Bee %s: %s @ %s' % (instance.id, instance.state, instance.ip_address))
 
 def down():
     """
@@ -155,19 +156,19 @@ def down():
     username, key_name, instance_ids = _read_server_list()
 
     if not instance_ids:
-        print 'No bees have been mobilized.'
+        logging.info('No bees have been mobilized.')
         return
 
-    print 'Connecting to the hive.'
+    logging.info('Connecting to the hive.')
 
     ec2_connection = boto.connect_ec2()
 
-    print 'Calling off the swarm.'
+    logging.info('Calling off the swarm.')
 
     terminated_instance_ids = ec2_connection.terminate_instances(
         instance_ids=instance_ids)
 
-    print 'Stood down %i bees.' % len(terminated_instance_ids)
+    logging.info('Stood down %i bees.' % len(terminated_instance_ids))
 
     _delete_server_list()
 
@@ -177,7 +178,7 @@ def _attack(params):
 
     Intended for use with multiprocessing.
     """
-    print 'Bee %i is joining the swarm.' % params['i']
+    logging.info('Bee %i is joining the swarm.' % params['i'])
 
     try:
         client = paramiko.SSHClient()
@@ -187,7 +188,8 @@ def _attack(params):
             username=params['username'],
             key_filename=_get_pem_path(params['key_name']))
 
-        print 'Bee %i is firing his machine gun. Bang bang!' % params['i']
+        logging.info('Bee %i is firing his machine gun. Bang bang!' % params['i'])
+        
         t = ABTester()
 
         cmd = t.get_command(
@@ -204,22 +206,21 @@ def _attack(params):
         return e
 
 
-
-def attack(url, n, c, keepalive):
+def attack(url, n, c, keepalive, output_type):
     """
     Test the root url of this site.
     """
     username, key_name, instance_ids = _read_server_list()
 
     if not instance_ids:
-        print 'No bees are ready to attack.'
+        logging.info('No bees are ready to attack.')
         return
 
-    print 'Connecting to the hive.'
+    logging.info('Connecting to the hive.')
 
     ec2_connection = boto.connect_ec2()
 
-    print 'Assembling bees.'
+    logging.info('Assembling bees.')
 
     reservations = ec2_connection.get_all_instances(instance_ids=instance_ids)
 
@@ -233,7 +234,7 @@ def attack(url, n, c, keepalive):
     connections_per_instance = int(float(c) / instance_count)
     keepalive = bool(keepalive)
 
-    print 'Each of %i bees will fire %s rounds, %s at a time.' % (instance_count, requests_per_instance, connections_per_instance)
+    logging.info( 'Each of %i bees will fire %s rounds, %s at a time.' % (instance_count, requests_per_instance, connections_per_instance))
 
     params = []
 
@@ -250,22 +251,34 @@ def attack(url, n, c, keepalive):
             'keepalive': keepalive
         })
 
-    print 'Stinging URL so it will be cached for the attack.'
+    logging.info('Stinging URL so it will be cached for the attack.')
 
     # Ping url so it will be cached for testing
-    urllib2.urlopen(url)
+    urllib2.urlopen(url, timeout=5)
 
-    print 'Organizing the swarm.'
+    logging.info('Organizing the swarm.')
 
     # Spin up processes for connecting to EC2 instances
     pool = Pool(len(params))
     results = pool.map(_attack, params)
 
-    print 'Offensive complete.'
+    logging.info('Offensive complete.')
+    
     timeout_bees = [r for r in results if r is None]
     exception_bees = [r for r in results if type(r) == socket.error]
     complete_bees = [r for r in results if r is not None and type(r) != socket.error]
 
     aggregate_result = get_aggregate_result(complete_bees)
 
-    print 'The swarm is awaiting new orders.'
+    if output_type.startswith('csv'):
+        # it is presumed that csv output should be suppressed when some 
+        # workers failed.
+        if not timeout_bees and not exception_bees:
+            if output_type=='csvh':
+                print >> sys.stdout, ','.join(aggregate_result._fields)
+            print >> sys.stdout, ','.join(map(str,aggregate_result))
+    else:
+        aggregate_result.print_text(sys.stdout)
+    
+
+    logging.info('The swarm is awaiting new orders.')

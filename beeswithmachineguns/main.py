@@ -78,12 +78,15 @@ commands:
     parser.add_option_group(up_group)
 
     attack_group = OptionGroup(parser, "attack",
-            """Beginning an attack requires only that you specify the -u option with the URL you wish to target.""")
+            """Beginning an attack requires that you specify the URL(s) you wish to target, either using -u or -f.""")
 
     # Required
     attack_group.add_option('-u', '--url', metavar="URL", nargs=1,
                         action='store', dest='url', type='string',
                         help="URL of the target to attack.")
+    attack_group.add_option('-f', '--url-file', metavar="URL_FILE", nargs=1,
+                        action='store', dest='url_file', type='string',
+                        help="file containing URLs of the targets to attack.")
 
     attack_group.add_option('-n', '--number', metavar="NUMBER", nargs=1,
                         action='store', dest='number', type='int', default=1000,
@@ -91,11 +94,22 @@ commands:
     attack_group.add_option('-c', '--concurrent', metavar="CONCURRENT", nargs=1,
                         action='store', dest='concurrent', type='int', default=100,
                         help="The number of concurrent connections to make to the target (default: 100).")
-    attack_group.add_option('-k', '--keepalive', metavar="KEEPALIVE",
+    attack_group.add_option('--keepalive', metavar="KEEPALIVE",
                             action='store_true', dest='keepalive', default=False,
                             help='Whether or not to use ab keepalive (default: False)')
 
     parser.add_option_group(attack_group)
+
+    output_group = OptionGroup(parser, "output")
+    
+    output_group.add_option('-o', '--output', metavar="OUTPUT_TYPE", nargs=1,
+                        action='store', dest='output_type', type='string',
+                        help="specify \'csv\' to output a csv row.  specify \'csvh\' to output csv headers prior to the csv row.")
+    output_group.add_option('-v', '--verbose', metavar="VERBOSE", 
+                        action='store_true', dest='verbose', default=False,
+                        help="whether to log verbosely to stderr.")
+
+    parser.add_option_group(output_group)
 
     (options, args) = parser.parse_args()
 
@@ -103,6 +117,11 @@ commands:
         parser.error('Please enter a command.')
 
     command = args[0]
+    
+    if options.verbose:
+        import logging
+        logging.basicConfig(level=logging.INFO)
+
 
     if command == 'up':
         if not options.key:
@@ -113,13 +132,23 @@ commands:
 
         bees.up(options.servers, options.group, options.zone, options.instance, options.login, options.key)
     elif command == 'attack':
-        if not options.url:
-            parser.error('To run an attack you need to specify a url with -u')
+        
+        if options.url_file:
+            try:
+                # only one url supported for now :-)
+                url = open(options.url_file,'rb').readline().strip()
+            except IOError:
+                parser.error('Could not open url file %s - please try again.' % options.url_file)
+        elif options.url:
+            if NO_TRAILING_SLASH_REGEX.match(options.url):
+                parser.error('It appears your URL lacks a trailing slash, this will disorient the bees. Please try again with a trailing slash.')
+            else:
+                url = options.url
+        else:
+            parser.error('To run an attack you need to specify either a url with -u or a file with -f.')
 
-        if NO_TRAILING_SLASH_REGEX.match(options.url):
-            parser.error('It appears your URL lacks a trailing slash, this will disorient the bees. Please try again with a trailing slash.')
 
-        bees.attack(options.url, options.number, options.concurrent, options.keepalive)
+        bees.attack(url, options.number, options.concurrent, options.keepalive, options.output_type)
     elif command == 'down':
         bees.down()
     elif command == 'report':
@@ -128,4 +157,8 @@ commands:
 
 def main():
     parse_options()
+
+
+if __name__=='__main__':
+    main()
 
