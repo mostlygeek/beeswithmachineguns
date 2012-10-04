@@ -56,7 +56,7 @@ def _read_server_list():
         text = f.read()
         instance_ids = text.split('\n')
 
-        logging.info('Read %i bees from the roster.' % len(instance_ids))
+        logging.debug('Read %i bees from the roster.' % len(instance_ids))
 
     return (username, key_name, instance_ids)
 
@@ -81,7 +81,7 @@ def up(count, group, zone, image_id, username, key_name):
     existing_username, existing_key_name, instance_ids = _read_server_list()
 
     if instance_ids:
-        logging.info('Bees are already assembled and awaiting orders.')
+        logging.warning('Bees are already assembled and awaiting orders.')
         return
 
     count = int(count)
@@ -89,7 +89,7 @@ def up(count, group, zone, image_id, username, key_name):
     pem_path = _get_pem_path(key_name)
 
     if not os.path.isfile(pem_path):
-        logging.info('No key file found at %s' % pem_path)
+        logging.error('No key file found at %s' % pem_path)
         return
 
     logging.info('Connecting to the hive.')
@@ -113,7 +113,7 @@ def up(count, group, zone, image_id, username, key_name):
 
     for instance in reservation.instances:
         while instance.state != 'running':
-            logging.info('.')
+            logging.debug('.')
             time.sleep(5)
             instance.update()
 
@@ -179,7 +179,8 @@ def _attack(params):
     Intended for use with multiprocessing.
     """
     logging.info('Bee %i is joining the swarm.' % params['i'])
-
+    logging.debug('Bee %i params: %s' % (params['i'], params))
+    
     try:
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -250,7 +251,7 @@ def attack(url, n, c, keepalive, output_type):
     connections_per_instance = int(float(c) / instance_count)
     keepalive = bool(keepalive)
 
-    logging.info( 'Each of %i bees will fire %s rounds, %s at a time.' % (instance_count, requests_per_instance, connections_per_instance))
+    logging.debug( 'Each of %i bees will fire %s rounds, %s at a time.' % (instance_count, requests_per_instance, connections_per_instance))
 
     params = []
 
@@ -272,17 +273,17 @@ def attack(url, n, c, keepalive, output_type):
     # Ping url so it will be cached for testing
     urllib2.urlopen(url, timeout=5)
 
-    logging.info('Organizing the swarm.')
-
     # Spin up processes for connecting to EC2 instances
     pool = Pool(len(params))
     results = pool.map(_attack, params)
 
-    logging.info('Offensive complete.')
+    logging.debug('Offensive complete.')
     
     timeout_bees = [r for r in results if r is None]
     exception_bees = [r for r in results if type(r) == socket.error]
     complete_bees = [r for r in results if r is not None and type(r) != socket.error]
+
+    logging.info('%s of %s clients succeeded.' % (len(complete_bees), len(results)))
 
     aggregate_result = get_aggregate_result(complete_bees)
 
@@ -295,6 +296,8 @@ def attack(url, n, c, keepalive, output_type):
         # workers failed.
         if not timeout_bees and not exception_bees:
             print >> sys.stdout, ','.join(map(str,aggregate_result))
+        else:
+            logging.warning('test results invalid - one or more clients failed')
     else:
         aggregate_result.print_text(sys.stdout)
     
