@@ -121,6 +121,7 @@ commands:
     if options.verbose:
         import logging
         logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.DEBUG)
 
 
     if command == 'up':
