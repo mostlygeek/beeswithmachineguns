@@ -1,0 +1,48 @@
+This is ApacheBench, Version 2.3 <$Revision: 655654 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking ec2-50-17-10-155.compute-1.amazonaws.com (be patient)
+
+
+Server Software:        nginx/1.0.15
+Server Hostname:        ec2-50-17-10-155.compute-1.amazonaws.com
+Server Port:            9060
+
+Document Path:          /casale/bidder/?exclusive=0&external_user_id=346ff3fb8f5f4c0ca369dde625667677&language=EN&site_depth=1&url=http%3A%2F%2Fwww.gamemazing.com%2F%3Futm_source%3D790006845&cm_request_id=029104E033E56EF1&exchange_depth=2&time_zone=300&cat=IAB9-5&referrer_url=http%3A%2F%2Fd3.zedo.com%2Fjsc%2Fd3%2Fff2.html%3Fn%3D790%3Bs%3D4889%3Bc%3D6845%3Bd%3D16%3Bw%3D1024%3Bh%3D768&safety=2%2C6268&user_agent=Mozilla%2F5.0%20%28Windows%20NT%206.1%3B%20WOW64%29%20AppleWebKit%2F537.4%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F22.0.1229.79%20Safari%2F537.4&in_iframe=0&cm_user_id=1puRZdHt54sAAC6lBSYAAABK&positi
+on=above&cm_website_id=137540&ip_address=98.253.32.176&size=728x90
+Document Length:        11 bytes
+
+Concurrency Level:      93
+Time taken for tests:   9.663 seconds
+Complete requests:      12500
+Failed requests:        0
+Write errors:           0
+Keep-Alive requests:    12500
+Total transferred:      2062500 bytes
+HTML transferred:       137500 bytes
+Requests per second:    1293.53 [#/sec] (mean)
+Time per request:       71.896 [ms] (mean)
+Time per request:       0.773 [ms] (mean, across all concurrent requests)
+Transfer rate:          208.43 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    0   0.7      0      12
+Processing:     5   72  17.6     69     228
+Waiting:        5   72  17.6     69     228
+Total:          6   72  17.5     69     228
+
+Percentage of the requests served within a certain time (ms)
+  50%     69
+  66%     74
+  75%     75
+  80%     76
+  90%     83
+  95%    107
+  98%    124
+  99%    139
+ 100%    228 (longest request)
+
+
+

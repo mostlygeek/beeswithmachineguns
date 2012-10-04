@@ -35,6 +35,9 @@ import urllib2
 import boto
 import paramiko
 
+from tester import ABTester, TesterResult, get_aggregate_result
+
+
 EC2_INSTANCE_TYPE = 't1.micro'
 STATE_FILENAME = os.path.expanduser('~/.bees')
 
@@ -185,101 +188,22 @@ def _attack(params):
             key_filename=_get_pem_path(params['key_name']))
 
         print 'Bee %i is firing his machine gun. Bang bang!' % params['i']
-        cmd = []
-        cmd.append('ab')
-        cmd.append('-r')
-        cmd.append('-n %(num_requests)s' % params)
-        cmd.append('-c %(concurrent_requests)s' % params)
-        cmd.append('-C "sessionid=NotARealSessionID"')
+        t = ABTester()
 
-        if params.get('keepalive', False):
-            cmd.append('-k')
+        cmd = t.get_command(
+            params['num_requests'],
+            params['concurrent_requests'],
+            params['keepalive'],
+            params['url']
+            )
+        
+        stdin, stdout, stderr = client.exec_command(cmd)        
+        return t.parse_output(stdout.read())
 
-        cmd.append('"%(url)s"' % params)
-
-        stdin, stdout, stderr = client.exec_command(' '.join(cmd))
-
-        response = {}
-
-        ab_results = stdout.read()
-        ms_per_request_search = re.search('Time\ per\ request:\s+([0-9.]+)\ \[ms\]\ \(mean\)', ab_results)
-
-        if not ms_per_request_search:
-            print 'Bee %i lost sight of the target (connection timed out).' % params['i']
-            return None
-
-        requests_per_second_search = re.search('Requests\ per\ second:\s+([0-9.]+)\ \[#\/sec\]\ \(mean\)', ab_results)
-        fifty_percent_search = re.search('\s+50\%\s+([0-9]+)', ab_results)
-        ninety_percent_search = re.search('\s+90\%\s+([0-9]+)', ab_results)
-        complete_requests_search = re.search('Complete\ requests:\s+([0-9]+)', ab_results)
-
-        response['ms_per_request'] = float(ms_per_request_search.group(1))
-        response['requests_per_second'] = float(requests_per_second_search.group(1))
-        response['fifty_percent'] = float(fifty_percent_search.group(1))
-        response['ninety_percent'] = float(ninety_percent_search.group(1))
-        response['complete_requests'] = float(complete_requests_search.group(1))
-
-        print 'Bee %i is out of ammo.' % params['i']
-
-        client.close()
-
-        return response
     except socket.error, e:
         return e
 
 
-def _print_results(results):
-    """
-    Print summarized load-testing results.
-    """
-    timeout_bees = [r for r in results if r is None]
-    exception_bees = [r for r in results if type(r) == socket.error]
-    complete_bees = [r for r in results if r is not None and type(r) != socket.error]
-
-    num_timeout_bees = len(timeout_bees)
-    num_exception_bees = len(exception_bees)
-    num_complete_bees = len(complete_bees)
-
-    if exception_bees:
-        print '     %i of your bees didn\'t make it to the action. They might be taking a little longer than normal to find their machine guns, or may have been terminated without using "bees down".' % num_exception_bees
-
-    if timeout_bees:
-        print '     Target timed out without fully responding to %i bees.' % num_timeout_bees
-
-    if num_complete_bees == 0:
-        print '     No bees completed the mission. Apparently your bees are peace-loving hippies.'
-        return
-
-    complete_results = [r['complete_requests'] for r in complete_bees]
-    total_complete_requests = sum(complete_results)
-    print '     Complete requests:\t\t%i' % total_complete_requests
-
-    complete_results = [r['requests_per_second'] for r in complete_bees]
-    mean_requests = sum(complete_results)
-    print '     Requests per second:\t%f [#/sec] (mean)' % mean_requests
-
-    complete_results = [r['ms_per_request'] for r in complete_bees]
-    mean_response = sum(complete_results) / num_complete_bees
-    print '     Time per request:\t\t%f [ms] (mean)' % mean_response
-
-    complete_results = [r['fifty_percent'] for r in complete_bees]
-    mean_fifty = sum(complete_results) / num_complete_bees
-    print '     50%% response time:\t\t%f [ms] (mean)' % mean_fifty
-
-    complete_results = [r['ninety_percent'] for r in complete_bees]
-    mean_ninety = sum(complete_results) / num_complete_bees
-    print '     90%% response time:\t\t%f [ms] (mean)' % mean_ninety
-
-    if mean_response < 500:
-        print 'Mission Assessment: Target crushed bee offensive.'
-    elif mean_response < 1000:
-        print 'Mission Assessment: Target successfully fended off the swarm.'
-    elif mean_response < 1500:
-        print 'Mission Assessment: Target wounded, but operational.'
-    elif mean_response < 2000:
-        print 'Mission Assessment: Target severely compromised.'
-    else:
-        print 'Mission Assessment: Swarm annihilated target.'
 
 def attack(url, n, c, keepalive):
     """
@@ -338,7 +262,10 @@ def attack(url, n, c, keepalive):
     results = pool.map(_attack, params)
 
     print 'Offensive complete.'
+    timeout_bees = [r for r in results if r is None]
+    exception_bees = [r for r in results if type(r) == socket.error]
+    complete_bees = [r for r in results if r is not None and type(r) != socket.error]
 
-    _print_results(results)
+    aggregate_result = get_aggregate_result(complete_bees)
 
     print 'The swarm is awaiting new orders.'
