@@ -188,21 +188,37 @@ def _attack(params):
             username=params['username'],
             key_filename=_get_pem_path(params['key_name']))
 
-        logging.info('Bee %i is firing his machine gun. Bang bang!' % params['i'])
+        try:
+            logging.debug('Bee %i is firing his machine gun. Bang bang!' % params['i'])
+            
+            t = ABTester()
+    
+            cmd = t.get_command(
+                params['num_requests'],
+                params['concurrent_requests'],
+                params['keepalive'],
+                params['url']
+                )
         
-        t = ABTester()
+            stdin, stdout, stderr = client.exec_command(cmd)
+            output = stdout.read()
+            result = t.parse_output(output)
+            if result is None:
+                msg = 'could not parse result from output (%(i)s/%(instance_id)s):'
+                logging.error(msg % params)
+                logging.error(output)
+            else:
+                msg = 'finished testing: (%(i)s/%(instance_id)s)'
+                logging.info(msg % params)
+            return result
 
-        cmd = t.get_command(
-            params['num_requests'],
-            params['concurrent_requests'],
-            params['keepalive'],
-            params['url']
-            )
-        
-        stdin, stdout, stderr = client.exec_command(cmd)        
-        return t.parse_output(stdout.read())
+        finally:
+            client.close()
 
     except socket.error, e:
+        msg = 'encountered socket error (%(i)s/%(instance_id)s):'
+        logging.error(msg % params)
+        logging.exception(e)
         return e
 
 
