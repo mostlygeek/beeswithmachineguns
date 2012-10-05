@@ -54,8 +54,11 @@ _result_keys = [
   , 'total_transferred'
   , 'requests_per_second'
   , 'ms_per_request'
-  , 'fifty_percent'
-  , 'ninety_percent'
+  , 'pctile_50'
+  , 'pctile_75'
+  , 'pctile_90'
+  , 'pctile_95'
+  , 'pctile_99'
 ]
 
 class TesterResult(namedtuple('TesterResult', _result_keys)):
@@ -77,10 +80,13 @@ class TesterResult(namedtuple('TesterResult', _result_keys)):
         print >> out, 'Failed requests:\t%i' % self.failed_requests
         print >> out, 'Non-2xx responses:\t%i' % self.non_2xx_responses
         print >> out, 'Total Transferred:\t%i bytes' % self.total_transferred
-        print >> out, 'Requests per second:\t%f [#/sec] (mean)' % self.requests_per_second
-        print >> out, 'Time per request:\t%f [ms] (mean)' % self.ms_per_request
-        print >> out, '50%% response time:\t%f [ms] (mean)' % self.fifty_percent
-        print >> out, '90%% response time:\t%f [ms] (mean)' % self.ninety_percent
+        print >> out, 'Requests per second:\t%.2f [#/sec] (mean)' % self.requests_per_second
+        print >> out, 'Time per request:\t%.3f [ms] (mean)' % self.ms_per_request
+        print >> out, '50%% response time:\t%i [ms] (mean)' % self.pctile_50
+        print >> out, '75%% response time:\t%i [ms] (mean)' % self.pctile_75
+        print >> out, '90%% response time:\t%i [ms] (mean)' % self.pctile_90
+        print >> out, '95%% response time:\t%i [ms] (mean)' % self.pctile_95
+        print >> out, '99%% response time:\t%i [ms] (mean)' % self.pctile_99
     
 
 def get_aggregate_result(results):
@@ -90,17 +96,19 @@ def get_aggregate_result(results):
     
     ar = {}
     
-    ar['concurrency']         = sum([r.concurrency for r in results])
-    # time taken using max instead of sum...not precise.  do not use in further aggregation.
-    ar['time_taken']          = max([r.time_taken for r in results])
-    ar['complete_requests']   = sum([r.complete_requests for r in results])
-    ar['failed_requests']     = sum([r.failed_requests for r in results])
-    ar['non_2xx_responses']   = sum([r.non_2xx_responses for r in results])
-    ar['total_transferred']   = sum([r.total_transferred for r in results])
-    ar['requests_per_second'] = sum([r.requests_per_second for r in results])
-    ar['ms_per_request']      = sum([r.ms_per_request for r in results]) / len(results)
-    ar['fifty_percent']       = sum([r.fifty_percent for r in results]) / len(results)
-    ar['ninety_percent']      = sum([r.ninety_percent for r in results]) / len(results)
+    for k in _result_keys:        
+        if k=='ms_per_request' or k.startswith('pctile'):
+            # weighted mean.
+            ar[k] = sum([(getattr(r,k) * r.complete_requests) for r in results]) /  sum([r.complete_requests for r in results])
+            continue
+        elif k=='time_taken':
+            # time taken using max instead of sum...not precise.  
+            # do not use in further aggregation.
+            func = max
+        else:
+            # everything else is just summed
+            func = sum
+        ar[k] = func([getattr(r,k) for r in results])
     
     return TesterResult(**ar)
 
@@ -163,11 +171,9 @@ class ABTester(Tester):
         trd['time_taken'] = \
             float(m('Time\ taken\ for\ tests:\s+([0-9.]+)\ seconds', output))
 
-        trd['fifty_percent'] = \
-            float(m('\s+50\%\s+([0-9]+)', output))
-
-        trd['ninety_percent'] = \
-            float(m('\s+90\%\s+([0-9]+)', output))
+        for pctile in (50, 75, 90, 95, 99):
+            trd['pctile_%s' % pctile] = \
+                float(m('\s+%s\%%\s+([0-9]+)' % pctile, output)) # e.g. '\s+50\%\s+([0-9]+)'
 
         trd['complete_requests'] = \
             float(m('Complete\ requests:\s+([0-9]+)', output))

@@ -44,8 +44,11 @@ class AbTesterTestCase(unittest.TestCase):
               , total_transferred=16551810.0
               , requests_per_second=2546.4
               , ms_per_request=39.271
-              , fifty_percent=26.0
-              , ninety_percent=93.0
+              , pctile_50=26.0
+              , pctile_75=57.0
+              , pctile_90=93.0
+              , pctile_95=121.0
+              , pctile_99=175.0
               ),
             t.parse_output(read_file('ab-output-1.txt'))
             )
@@ -60,8 +63,11 @@ class AbTesterTestCase(unittest.TestCase):
               , total_transferred=2062500.0
               , requests_per_second=1293.53
               , ms_per_request=71.896
-              , fifty_percent=69.0
-              , ninety_percent=83.0
+              , pctile_50=69.0
+              , pctile_75=75.0
+              , pctile_90=83.0
+              , pctile_95=107.0
+              , pctile_99=139.0
               ),
             t.parse_output(read_file('ab-output-2.txt'))
             )
