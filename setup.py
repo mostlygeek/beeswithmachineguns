@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from multiprocessing import util
 
 setup(name='beeswithmachineguns',
-      version='0.1.4',
+      version='0.1.4.1',
       description='A utility for arming (creating) many bees (micro EC2 instances) to attack (load test) targets (web applications).',
       author='Christopher Groskopf',
       author_email='cgroskopf@tribune.com',
