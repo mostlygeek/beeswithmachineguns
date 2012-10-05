@@ -118,10 +118,12 @@ commands:
 
     command = args[0]
     
+    import logging
     if options.verbose:
-        import logging
-        logging.basicConfig(level=logging.DEBUG)
-
+        level=logging.DEBUG
+    else:
+        level=logging.WARNING
+    logging.basicConfig(level=level)
 
     if command == 'up':
         if not options.key:
