@@ -1,0 +1,47 @@
+This is ApacheBench, Version 2.3 <$Revision: 655654 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking ec2-50-17-10-155.compute-1.amazonaws.com (be patient)
+
+
+Server Software:        nginx/1.0.15
+Server Hostname:        ec2-50-17-10-155.compute-1.amazonaws.com
+Server Port:            9060
+
+Document Path:          /casale/bidder/?exclusive=0&external_user_id=346ff3fb8f5f4c0ca369dde625667677&language=EN&site_depth=1&url=http%3A%2F%2Fwww.gamemazing.com%2F%3Futm_source%3D790006845&cm_request_id=029104E033E56EF1&exchange_depth=2&time_zone=300&cat=IAB9-5&referrer_url=http%3A%2F%2Fd3.zedo.com%2Fjsc%2Fd3%2Fff2.html%3Fn%3D790%3Bs%3D4889%3Bc%3D6845%3Bd%3D16%3Bw%3D1024%3Bh%3D768&safety=2%2C6268&user_agent=Mozilla%2F5.0%20%28Windows%20NT%206.1%3B%20WOW64%29%20AppleWebKit%2F537.4%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F22.0.1229.79%20Safari%2F537.4&in_iframe=0&cm_user_id=1puRZdHt54sAAC6lBSYAAABK&position=above&cm_website_id=137540&ip_address=98.253.32.176&size=728x90
+Document Length:        173 bytes
+
+Concurrency Level:      100
+Time taken for tests:   24.544 seconds
+Complete requests:      62500
+Failed requests:        24688
+   (Connect: 0, Receive: 0, Length: 24688, Exceptions: 0)
+Write errors:           0
+Non-2xx responses:      37813
+Keep-Alive requests:    62500
+Total transferred:      16551810 bytes
+HTML transferred:       6813217 bytes
+Requests per second:    2546.40 [#/sec] (mean)
+Time per request:       39.271 [ms] (mean)
+Time per request:       0.393 [ms] (mean, across all concurrent requests)
+Transfer rate:          658.56 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    0   0.2      0       8
+Processing:     0   39  39.4     26     324
+Waiting:        0   39  39.4     26     324
+Total:          0   39  39.4     26     324
+
+Percentage of the requests served within a certain time (ms)
+  50%     26
+  66%     43
+  75%     57
+  80%     66
+  90%     93
+  95%    121
+  98%    153
+  99%    175
+ 100%    324 (longest request)
+
