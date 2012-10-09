@@ -71,6 +71,9 @@ commands:
     up_group.add_option('-i', '--instance',  metavar="INSTANCE",  nargs=1,
                         action='store', dest='instance', type='string', default='ami-ff17fb96',
                         help="The instance-id to use for each server from (default: ami-ff17fb96).")
+    up_group.add_option('-t', '--instance_type',  metavar="INSTANCE_TYPE",  nargs=1,
+                        action='store', dest='instance_type', type='string', default='t1.micro',
+                        help="The ec2 instance type to use for each server (default: t1.micro).")
     up_group.add_option('-l', '--login',  metavar="LOGIN",  nargs=1,
                         action='store', dest='login', type='string', default='newsapps',
                         help="The ssh username name to use to connect to the new servers (default: newsapps).")
@@ -132,7 +135,7 @@ commands:
         #if options.group == 'default':
         #    print 'New bees will use the "default" EC2 security group. Please note that port 22 (SSH) is not normally open on this group. You will need to use to the EC2 tools to open it before you will be able to attack.'
 
-        bees.up(options.servers, options.group, options.zone, options.instance, options.login, options.key)
+        bees.up(options.servers, options.group, options.zone, options.instance, options.instance_type, options.login, options.key)
     elif command == 'attack':
         
         if options.url_file:
