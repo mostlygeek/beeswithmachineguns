@@ -45,6 +45,18 @@ class Tester(object):
         raise NotImplementedError
 
 
+    def _parse_measure(self, expression, content, default=''):
+        """
+        Regular expression scraping helper
+        
+        @param expression: regular expression
+        @param content: the output to scrape
+        @param default: if the expression doesn't capture anything, return this
+        """
+        s = re.search(expression, content)
+        return (s is not None and s.group(1)) or default
+        
+        
 _result_keys = [
     'concurrency'
   , 'time_taken'
@@ -137,18 +149,6 @@ class ABTester(Tester):
         return cmd_line
         
 
-    def _parse_measure(self, expression, content, default=''):
-        """
-        Regular expression scraping helper
-        
-        @param expression: regular expression
-        @param content: the output to scrape
-        @param default: if the expression doesn't capture anything, return this
-        """
-        s = re.search(expression, content)
-        return (s is not None and s.group(1)) or default
-        
-        
     def parse_output(self, output):
         """
         """
