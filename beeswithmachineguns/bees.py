@@ -25,6 +25,7 @@ THE SOFTWARE.
 """
 
 import logging
+import hashlib
 from multiprocessing import Pool
 import os
 import re
@@ -34,6 +35,7 @@ import time
 import urllib2
 
 import boto
+from boto.s3.key import Key
 import paramiko
 
 from tester import ABTester, SiegeTester, TesterResult, get_aggregate_result
@@ -188,6 +190,23 @@ def _attack(params):
             username=params['username'],
             key_filename=_get_pem_path(params['key_name']))
 
+        if params['url_file']:
+            logging.debug('checking for url file %s' % params['url_file'])
+            stdin, stdout, stderr = client.exec_command('stat %s' % params['url_file'])
+            if 'No such file or directory' in stderr.read():
+                logging.info('file %s not found on instance, retrieving via wget')
+                stdin, stdout, stderr = client.exec_command('wget http://s3.amazonaws.com/com.domdex.loadtest/%s' % params['url_file'])
+                logging.debug('stdout was %s' % stdout.read())
+                logging.debug('stderr was %s' % stderr.read())
+            else:
+                logging.debug('found file!')
+            if params['url_file'].endswith('.gz'):
+                logging.debug('gunzipping to urls.txt')
+                client.exec_command('gunzip -c %s > urls.txt' % params['url_file'])
+            else:
+                logging.debug('copying to urls.txt')
+                client.exec_command('cp %s urls.txt' % params['url_file'])
+
         try:
             logging.debug('Bee %i is firing his machine gun. Bang bang!' % params['i'])
             
@@ -227,7 +246,7 @@ def _attack(params):
         return e
 
 
-def attack(url, n, c, keepalive, output_type):
+def attack(url, url_file, n, c, keepalive, output_type, use_siege):
     """
     Test the root url of this site.
     """
@@ -257,6 +276,47 @@ def attack(url, n, c, keepalive, output_type):
 
     logging.debug( 'Each of %i bees will fire %s rounds, %s at a time.' % (instance_count, requests_per_instance, connections_per_instance))
 
+    # if there's a url file, it's time to:
+    # 1) verify it's already present on the worker instances
+    # 2a) if not, copy it to s3
+    # 2b) and then pull it down from s3 to the workers 
+    if url_file:
+        
+        is_gz = url_file.endswith('.gz')
+
+        md5 = hashlib.md5()
+        f = open(url_file, 'rb')
+        try:
+            while True:
+                data = f.read(2**20)
+                if not data:
+                    break
+                md5.update(data)
+        finally:
+            f.close()
+        local_hash = md5.hexdigest()
+        logging.debug('hash of local url file is %s' % local_hash)
+        
+        s3_name = 'urls-%s.txt' % local_hash
+        if is_gz: s3_name += '.gz'
+
+        bucket_name = 'com.domdex.loadtest'
+        s3 = boto.connect_s3()
+        lt_bucket = s3.get_bucket(bucket_name)
+        logging.debug('s3 bucket is %s' % lt_bucket)
+        key = lt_bucket.get_key(s3_name)
+        logging.debug('key is %s' % key)
+        if not key:
+            # needs to be uploaded.
+            logging.info('uploading urls file to %s' % s3_name)
+            key = lt_bucket.new_key(s3_name)
+            lt_bucket.set_acl('public-read', s3_name)
+            key.set_contents_from_filename(url_file)
+            logging.info('...upload complete')
+
+        url_file = s3_name
+        logging.info('using url file: %s' % url_file)
+            
     params = []
 
     for i, instance in enumerate(instances):
@@ -265,6 +325,7 @@ def attack(url, n, c, keepalive, output_type):
             'instance_id': instance.id,
             'instance_name': instance.public_dns_name,
             'url': url,
+            'url_file': url_file,
             'concurrent_requests': connections_per_instance,
             'num_requests': requests_per_instance,
             'username': username,
@@ -276,7 +337,8 @@ def attack(url, n, c, keepalive, output_type):
     logging.info('Stinging URL so it will be cached for the attack.')
 
     # Ping url so it will be cached for testing
-    urllib2.urlopen(url, timeout=5)
+    if url:
+        urllib2.urlopen(url, timeout=5)
 
     # Spin up processes for connecting to EC2 instances
     pool = Pool(len(params))

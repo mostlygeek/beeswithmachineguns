@@ -25,6 +25,7 @@ THE SOFTWARE.
 """
 
 import bees
+import os
 import re
 import sys
 from optparse import OptionParser, OptionGroup
@@ -126,7 +127,7 @@ commands:
     
     import logging
     if options.verbose:
-        level=logging.DEBUG
+        level=logging.INFO
     else:
         level=logging.WARNING
     logging.basicConfig(level=level)
@@ -141,12 +142,10 @@ commands:
         bees.up(options.servers, options.group, options.zone, options.instance, options.instance_type, options.login, options.key)
     elif command == 'attack':
         
+        url, url_file = None, None
         if options.url_file:
-            try:
-                # only one url supported for now :-)
-                url = open(options.url_file,'rb').readline().strip()
-            except IOError:
-                parser.error('Could not open url file %s - please try again.' % options.url_file)
+            url_file = os.path.realpath(options.url_file)
+            assert os.path.isfile(url_file)
         elif options.url:
             if NO_TRAILING_SLASH_REGEX.match(options.url):
                 parser.error('It appears your URL lacks a trailing slash, this will disorient the bees. Please try again with a trailing slash.')
@@ -156,7 +155,7 @@ commands:
             parser.error('To run an attack you need to specify either a url with -u or a file with -f.')
 
 
-        bees.attack(url, options.number, options.concurrent, options.keepalive, options.output_type)
+        bees.attack(url, url_file, options.number, options.concurrent, options.keepalive, options.output_type, options.use_siege)
     elif command == 'down':
         bees.down()
     elif command == 'report':
