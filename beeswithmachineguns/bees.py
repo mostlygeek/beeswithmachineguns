@@ -36,7 +36,7 @@ import urllib2
 import boto
 import paramiko
 
-from tester import ABTester, TesterResult, get_aggregate_result
+from tester import ABTester, SiegeTester, TesterResult, get_aggregate_result
 
 
 STATE_FILENAME = os.path.expanduser('~/.bees')
@@ -191,7 +191,7 @@ def _attack(params):
         try:
             logging.debug('Bee %i is firing his machine gun. Bang bang!' % params['i'])
             
-            t = ABTester()
+            t = (params['use_siege'] and SiegeTester()) or ABTester()
     
             cmd = t.get_command(
                 params['num_requests'],
@@ -201,7 +201,12 @@ def _attack(params):
                 )
         
             stdin, stdout, stderr = client.exec_command(cmd)
-            output = stdout.read()
+            if params['use_siege']:
+                logging.debug(cmd)
+                output = stderr.read()
+                logging.debug(output)
+            else:
+                output = stdout.read()
             result = t.parse_output(output)
             if result is None:
                 msg = 'could not parse result from output (%(i)s/%(instance_id)s):'
@@ -264,7 +269,8 @@ def attack(url, n, c, keepalive, output_type):
             'num_requests': requests_per_instance,
             'username': username,
             'key_name': key_name,
-            'keepalive': keepalive
+            'keepalive': keepalive,
+            'use_siege': use_siege
         })
 
     logging.info('Stinging URL so it will be cached for the attack.')

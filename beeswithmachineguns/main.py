@@ -100,6 +100,9 @@ commands:
     attack_group.add_option('--keepalive', metavar="KEEPALIVE",
                             action='store_true', dest='keepalive', default=False,
                             help='Whether or not to use ab keepalive (default: False)')
+    attack_group.add_option('--use-siege', metavar="USE_SIEGE",
+                            action='store_true', dest='use_siege', default=False,
+                            help='Whether or not to use siege instead of ab (default: False)')
 
     parser.add_option_group(attack_group)
 

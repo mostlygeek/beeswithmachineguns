@@ -190,3 +190,86 @@ class ABTester(Tester):
 
         return TesterResult(**trd)
 
+
+class SiegeTester(Tester):
+    """
+    """
+
+
+    def get_command(self, num_requests, concurrent_requests, is_keepalive, url):
+        """
+        """
+        
+        cmd = []
+        cmd.append('siege')
+        cmd.append('-v')
+        cmd.append('-i')
+        cmd.append('-b')
+        # siege multiplies the number of reqs you want by the concurrency,
+        # which is different from how ab works, so we divide them pre-emptively
+        cmd.append('-r %s' % max(1, (num_requests / concurrent_requests)))
+        cmd.append('-c %s' % concurrent_requests)
+
+        if not is_keepalive:
+            raise NotImplementedError, \
+                'siege test driver currently requires keepalive as default'
+
+        if url:
+            cmd.append('"%s"' % url)
+        else:
+            cmd.append('-f urls.txt')
+
+        cmd_line = ' '.join(cmd) + ' | siege_calc'
+        return cmd_line
+
+
+    def parse_output(self, output):
+        """
+        """
+        trd = {}        
+        m = self._parse_measure
+
+        rt_secs = m('Response\ time:\s+([0-9.]+)\ secs', output)
+
+        # give up now if we couldnt find the data
+        if not rt_secs: return None
+
+        trd['ms_per_request'] = \
+            float(float(rt_secs) * 1000.0)
+
+        trd['concurrency'] = \
+            float(m('Concurrency:\s+([0-9.]+)', output))
+
+        trd['requests_per_second'] = \
+            float(m('Transaction rate:\s+([0-9.]+)\ trans/sec', output))
+
+        trd['time_taken'] = \
+            float(m('Elapsed\ time:\s+([0-9.]+)\ secs', output))
+
+        # this bit requires siege_calc to be available on the worker bees
+        for pctile in (50, 75, 90, 95, 99):
+            trd['pctile_%s' % pctile] = \
+                float(m('\s+%s\%%\s+([0-9]+)' % pctile, output, 0)) # e.g. '\s+50\%\s+([0-9]+)'
+
+        trd['complete_requests'] = \
+            float(m('Transactions:\s+([0-9]+)\ hits', output))
+
+        trd['failed_requests'] = \
+            float(m('Failed\ transactions:\s+([0-9]+)', output))
+
+        # note - may not be present - default to 0
+        # this isnt implemented yet either
+        trd['non_2xx_responses'] = 0.0
+
+        xferred_mb = m('Data\ transferred:\s+([0-9.]+) MB', output)
+        trd['total_transferred'] = \
+            float(float(xferred_mb) * 1024.0 * 1024.0)
+
+        return TesterResult(**trd)
+
+            
+
+if __name__=='__main__':
+    import sys
+    SiegeTester().parse_timings(sys.stdin)
+    

@@ -1,0 +1,22 @@
+** SIEGE 2.72
+** Preparing 15 concurrent users for battle.
+The server is now under siege...
+Lifting the server siege...      done.
+ 
+Transactions:                   1719 hits
+Availability:                 100.00 %
+Elapsed time:                  59.22 secs
+Data transferred:               7.08 MB
+Response time:                  0.00 secs
+Transaction rate:              29.03 trans/sec
+Throughput:                     0.12 MB/sec
+Concurrency:                    0.04
+Successful transactions:        1556
+Failed transactions:               0
+Longest transaction:            0.03
+Shortest transaction:           0.00
+ 
+FILE: /root/siege/siege.log
+You can disable this annoying message by editing
+the .siegerc file in your home directory; change
+the directive 'show-logfile' to false.
