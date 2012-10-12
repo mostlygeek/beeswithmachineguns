@@ -16,7 +16,7 @@ setup(name='beeswithmachineguns',
       setup_requires=['nose'],
       test_suite='nose.collector',
       install_requires=[
-          'boto==2.0',
+          'boto>=2.0',
           'paramiko==1.7.7.1'
           ],
       classifiers=[
