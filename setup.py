@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from multiprocessing import util
 
 setup(name='beeswithmachineguns',
-      version='0.1.6.1',
+      version='0.1.6.2',
       description='A utility for arming (creating) many bees (micro EC2 instances) to attack (load test) targets (web applications).',
       author='Christopher Groskopf',
       author_email='cgroskopf@tribune.com',
@@ -16,8 +16,8 @@ setup(name='beeswithmachineguns',
       setup_requires=['nose'],
       test_suite='nose.collector',
       install_requires=[
-          'boto>=2.0',
-          'paramiko==1.7.7.1'
+          'boto>=2.6',
+          'paramiko>=1.8'
           ],
       classifiers=[
           'Development Status :: 4 - Beta',
