@@ -196,9 +196,10 @@ def _attack(params):
             stdin, stdout, stderr = client.exec_command('stat %s' % params['url_file'])
             if 'No such file or directory' in stderr.read():
                 logging.info('file %s not found on instance, retrieving via wget')
-                cmd = 'wget http://s3.amazonaws.com/%s/%s' % (params['url_file_bucket'], params['url_file'])
+                cmd = 'curl -O "http://s3.amazonaws.com/%s/%s"' % (params['url_file_bucket'], params['url_file'])
                 logging.info(cmd)
                 stdin, stdout, stderr = client.exec_command(cmd)
+                logging.debug(str((stdin, stdout, stderr))) # trying to debug the hang
                 logging.debug('stdout was %s' % stdout.read())
                 logging.debug('stderr was %s' % stderr.read())
             else:
