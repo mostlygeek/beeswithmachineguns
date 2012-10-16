@@ -33,6 +33,7 @@ import socket
 import sys
 import time
 import urllib2
+import urlparse
 
 import boto
 from boto.s3.key import Key
@@ -291,7 +292,8 @@ def attack(url, url_file, n, c, keepalive, output_type, use_siege):
 
         if url_file.startswith('s3://'):
             # make sure the file exists
-            bucket_name, s3_name = url_file[5:].split('/',1)
+            url_parts = urlparse.urlparse(url_file)
+            bucket_name, s3_name = url_parts.netloc, url_parts.path[1:]
             logging.debug('bucket_name: [%s]  s3_name: [%s]' % (bucket_name, s3_name))
             lt_bucket = s3.get_bucket(bucket_name)
             key = lt_bucket.get_key(s3_name)
