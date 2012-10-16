@@ -281,39 +281,69 @@ def attack(url, url_file, n, c, keepalive, output_type, use_siege):
     # 2a) if not, copy it to s3
     # 2b) and then pull it down from s3 to the workers 
     if url_file:
-        
-        is_gz = url_file.endswith('.gz')
 
-        md5 = hashlib.md5()
-        f = open(url_file, 'rb')
-        try:
-            while True:
-                data = f.read(2**20)
-                if not data:
-                    break
-                md5.update(data)
-        finally:
-            f.close()
-        local_hash = md5.hexdigest()
-        logging.debug('hash of local url file is %s' % local_hash)
-        
-        s3_name = 'urls-%s.txt' % local_hash
-        if is_gz: s3_name += '.gz'
-
-        bucket_name = 'com.domdex.loadtest'
         s3 = boto.connect_s3()
-        lt_bucket = s3.get_bucket(bucket_name)
-        logging.debug('s3 bucket is %s' % lt_bucket)
-        key = lt_bucket.get_key(s3_name)
-        logging.debug('key is %s' % key)
-        if not key:
-            # needs to be uploaded.
-            logging.info('uploading urls file to %s' % s3_name)
-            key = lt_bucket.new_key(s3_name)
-            lt_bucket.set_acl('public-read', s3_name)
-            key.set_contents_from_filename(url_file)
-            logging.info('...upload complete')
 
+        if url_file.startswith('s3://'):
+            # make sure the file exists
+            bucket_name, s3_name = url_file[5:].split('/',1)
+            logging.debug('bucket_name: [%s]  s3_name: [%s]' % (bucket_name, s3_name))
+            lt_bucket = s3.get_bucket(bucket_name)
+            # right now com.domdex.loadtest is hardcoded in a few places, 
+            # so require it here
+            if bucket_name != 'com.domdex.loadtest':
+                msg = 'buckets other than com.domdex.loadtest not currently supported'
+                logging.error(msg)
+                raise Exception, msg
+                
+            key = lt_bucket.get_key(s3_name)
+            if not key:
+                # invalid file
+                msg = 'invalid s3 bucket/key: [%s] [%s]'  % (bucket_name, s3_name)
+                logging.error(msg)
+                raise Exception, msg
+        else:
+            # local file
+            md5 = hashlib.md5()
+            f = open(url_file, 'rb')
+            try:
+                while True:
+                    data = f.read(2**20)
+                    if not data:
+                        break
+                    md5.update(data)
+            finally:
+                f.close()
+            local_hash = md5.hexdigest()
+            logging.debug('hash of local url file is %s' % local_hash)
+            
+            s3_name = os.path.basename(url_file)
+    
+            bucket_name = 'com.domdex.loadtest'
+            lt_bucket = s3.get_bucket(bucket_name)
+            logging.debug('s3 bucket is %s' % lt_bucket)
+            key = lt_bucket.get_key(s3_name)
+            logging.debug('key is %s' % key)
+    
+            if key:
+                remote_hash = key.etag.replace('"','')
+                # if etag matches local hash, nothing to be done.
+                # if they differ, fail and force the user to either rename the
+                # local file or manually overwrite the existing version in s3.
+                if remote_hash != local_hash:
+                    msg = 'a urls file with the same name [%s], different md5 [%s] '
+                    msg+= 'already exists in the bucket.  Please rename the local '
+                    msg+= 'urls file or manually overwrite the existing file in s3.'
+                    logging.error(msg % (s3_name, remote_hash))
+                    raise Exception, msg % (s3_name, remote_hash)
+            else:
+                # needs to be uploaded.
+                logging.info('uploading urls file to %s' % s3_name)
+                key = lt_bucket.new_key(s3_name)
+                key.set_contents_from_filename(url_file)
+                key.set_acl('public-read') # FIXME security
+                logging.info('...upload complete')
+    
         url_file = s3_name
         logging.info('using url file: %s' % url_file)
             

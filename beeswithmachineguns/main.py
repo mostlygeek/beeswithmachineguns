@@ -127,7 +127,7 @@ commands:
     
     import logging
     if options.verbose:
-        level=logging.INFO
+        level=logging.DEBUG
     else:
         level=logging.WARNING
     logging.basicConfig(level=level)
@@ -144,8 +144,12 @@ commands:
         
         url, url_file = None, None
         if options.url_file:
-            url_file = os.path.realpath(options.url_file)
-            assert os.path.isfile(url_file)
+            if not options.url_file.startswith('s3://'):
+                url_file = os.path.realpath(options.url_file)
+                assert os.path.isfile(url_file)
+            else:
+                # take it as-is, gets validated later
+                url_file = options.url_file
         elif options.url:
             if NO_TRAILING_SLASH_REGEX.match(options.url):
                 parser.error('It appears your URL lacks a trailing slash, this will disorient the bees. Please try again with a trailing slash.')
