@@ -195,7 +195,7 @@ def _attack(params):
             stdin, stdout, stderr = client.exec_command('stat %s' % params['url_file'])
             if 'No such file or directory' in stderr.read():
                 logging.info('file %s not found on instance, retrieving via wget')
-                stdin, stdout, stderr = client.exec_command('wget http://s3.amazonaws.com/com.domdex.loadtest/%s' % params['url_file'])
+                stdin, stdout, stderr = client.exec_command('wget http://s3.amazonaws.com/%s/%s' % (params['url_file_bucket'], params['url_file']))
                 logging.debug('stdout was %s' % stdout.read())
                 logging.debug('stderr was %s' % stderr.read())
             else:
@@ -276,6 +276,9 @@ def attack(url, url_file, n, c, keepalive, output_type, use_siege):
 
     logging.debug( 'Each of %i bees will fire %s rounds, %s at a time.' % (instance_count, requests_per_instance, connections_per_instance))
 
+    # default s3 bucket when we use it for url files
+    bucket_name = 'com.domdex.loadtest'
+
     # if there's a url file, it's time to:
     # 1) verify it's already present on the worker instances
     # 2a) if not, copy it to s3
@@ -289,13 +292,6 @@ def attack(url, url_file, n, c, keepalive, output_type, use_siege):
             bucket_name, s3_name = url_file[5:].split('/',1)
             logging.debug('bucket_name: [%s]  s3_name: [%s]' % (bucket_name, s3_name))
             lt_bucket = s3.get_bucket(bucket_name)
-            # right now com.domdex.loadtest is hardcoded in a few places, 
-            # so require it here
-            if bucket_name != 'com.domdex.loadtest':
-                msg = 'buckets other than com.domdex.loadtest not currently supported'
-                logging.error(msg)
-                raise Exception, msg
-                
             key = lt_bucket.get_key(s3_name)
             if not key:
                 # invalid file
@@ -318,8 +314,6 @@ def attack(url, url_file, n, c, keepalive, output_type, use_siege):
             logging.debug('hash of local url file is %s' % local_hash)
             
             s3_name = os.path.basename(url_file)
-    
-            bucket_name = 'com.domdex.loadtest'
             lt_bucket = s3.get_bucket(bucket_name)
             logging.debug('s3 bucket is %s' % lt_bucket)
             key = lt_bucket.get_key(s3_name)
@@ -356,6 +350,7 @@ def attack(url, url_file, n, c, keepalive, output_type, use_siege):
             'instance_name': instance.public_dns_name,
             'url': url,
             'url_file': url_file,
+            'url_file_bucket': bucket_name,
             'concurrent_requests': connections_per_instance,
             'num_requests': requests_per_instance,
             'username': username,
