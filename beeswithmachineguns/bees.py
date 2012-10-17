@@ -223,9 +223,15 @@ def _attack(params):
                 params['url']
                 )
         
+            logging.info(cmd)
+            t1 = time.time()
             stdin, stdout, stderr = client.exec_command(cmd)
+            
+            # block until the command has returned an exit status
+            exit_status = stdout.channel.recv_exit_status()
+            logging.info('exit status: %s  instance: %s  time: %s seconds' % (exit_status, params['i'], time.time()-t1))
+            
             if params['use_siege']:
-                logging.debug(cmd)
                 output = stderr.read()
                 logging.debug(output)
             else:
