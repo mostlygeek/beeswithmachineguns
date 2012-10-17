@@ -195,7 +195,7 @@ def _attack(params):
             logging.debug('checking for url file %s' % params['url_file'])
             stdin, stdout, stderr = client.exec_command('stat %s' % params['url_file'])
             if 'No such file or directory' in stderr.read():
-                logging.info('file %s not found on instance, retrieving via wget')
+                logging.info('file %s not found on instance, retrieving via curl')
                 cmd = 'curl -O "http://s3.amazonaws.com/%s/%s"' % (params['url_file_bucket'], params['url_file'])
                 logging.info(cmd)
                 stdin, stdout, stderr = client.exec_command(cmd)
