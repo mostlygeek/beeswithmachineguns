@@ -16,13 +16,13 @@ class AbTesterTestCase(unittest.TestCase):
         t = tester.ABTester()
 
         self.assertEqual(
-            "ab -r -n 3 -c 6 \"http://magnetic.domdex.com/\"", 
-            t.get_command(3, 6, False, 'http://magnetic.domdex.com/')
+            "ab -r -n 3 -c 6 \"http://www.example.com/\"", 
+            t.get_command(3, 6, False, 'http://www.example.com/')
             )
 
         self.assertEqual(
-            "ab -r -n 10 -c 100 -k \"http://magnetic.domdex.com/\"", 
-            t.get_command(10, 100, True, 'http://magnetic.domdex.com/')
+            "ab -r -n 10 -c 100 -k \"http://www.example.com/\"", 
+            t.get_command(10, 100, True, 'http://www.example.com/')
             )
 
 

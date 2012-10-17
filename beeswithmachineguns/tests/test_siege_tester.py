@@ -18,7 +18,7 @@ class SiegeTesterTestCase(unittest.TestCase):
         self.assertRaises(
                 NotImplementedError
               , t.get_command
-              , 3, 6, False, 'http://magnetic.domdex.com/'
+              , 3, 6, False, 'http://www.example.com/'
               )
 
         # This looks weird but is intentional:
@@ -26,8 +26,8 @@ class SiegeTesterTestCase(unittest.TestCase):
         # since siege multiplies requests by concurrency, the tester 
         # divides the reps pre-emptively to achieve the desired number  
         self.assertEqual(
-            "siege -v -i -b -r 10 -c 10 \"http://magnetic.domdex.com/\"", 
-            t.get_command(100, 10, True, 'http://magnetic.domdex.com/')
+            "siege -v -i -b -r 10 -c 10 \"http://www.example.com/\"", 
+            t.get_command(100, 10, True, 'http://www.example.com/')
             )
 
 
