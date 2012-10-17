@@ -202,7 +202,7 @@ class SiegeTester(Tester):
         
         cmd = []
         cmd.append('siege')
-        cmd.append('-v')
+        #cmd.append('-v') not needed without siege_calc, see below
         cmd.append('-i')
         cmd.append('-b')
         # siege multiplies the number of reqs you want by the concurrency,
@@ -221,7 +221,7 @@ class SiegeTester(Tester):
 
         #temporarily disable siege_calc - causing errors in jenkins
         #cmd_line = ' '.join(cmd) + ' | siege_calc'
-        cmd_line = ' '.join(cmd)
+        cmd_line = ' '.join(cmd) + ' > /dev/null'
         return cmd_line
 
 
