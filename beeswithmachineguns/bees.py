@@ -174,6 +174,22 @@ def down():
 
     _delete_server_list()
 
+
+def _exec_command_blocking(ssh_client, command, ident):
+    """
+    """
+    exit_status = et = 'unknown'
+    try:
+        t1 = time.time()
+        stdin, stdout, stderr = ssh_client.exec_command(command, bufsize=1)
+        exit_status = stdout.channel.recv_exit_status()
+        et = '%s seconds' % (time.time() - t1)
+        return (stdin, stdout, stderr)
+    finally:
+        msg = '************ [%s] `%s` (exit: %s, elapsed: %s)'
+        logging.info(msg % (ident, command, exit_status, et))
+
+
 def _attack(params):
     """
     Test the target URL with requests.
@@ -182,6 +198,9 @@ def _attack(params):
     """
     logging.info('Bee %i is joining the swarm.' % params['i'])
     logging.debug('Bee %i params: %s' % (params['i'], params))
+    
+    # for logging
+    ident = '%s/%s' % (params['i'], params['instance_id'])
     
     try:
         client = paramiko.SSHClient()
@@ -193,23 +212,20 @@ def _attack(params):
 
         if params['url_file']:
             logging.debug('checking for url file %s' % params['url_file'])
-            stdin, stdout, stderr = client.exec_command('stat %s' % params['url_file'])
+            stdin, stdout, stderr = _exec_command_blocking(client, 'stat %s' % params['url_file'], ident)
             if 'No such file or directory' in stderr.read():
                 logging.info('file %s not found on instance, retrieving via curl')
                 cmd = 'curl -O "http://s3.amazonaws.com/%s/%s"' % (params['url_file_bucket'], params['url_file'])
-                logging.info(cmd)
-                stdin, stdout, stderr = client.exec_command(cmd)
-                logging.debug(str((stdin, stdout, stderr))) # trying to debug the hang
-                logging.debug('stdout was %s' % stdout.read())
-                logging.debug('stderr was %s' % stderr.read())
+                _exec_command_blocking(client, cmd, ident)
             else:
                 logging.debug('found file!')
+            
             if params['url_file'].endswith('.gz'):
                 logging.debug('gunzipping to urls.txt')
-                client.exec_command('gunzip -c %s > urls.txt' % params['url_file'])
+                _exec_command_blocking(client, 'gunzip -c %s > urls.txt' % params['url_file'], ident)
             else:
                 logging.debug('copying to urls.txt')
-                client.exec_command('cp %s urls.txt' % params['url_file'])
+                _exec_command_blocking(client, 'cp %s urls.txt' % params['url_file'], ident)
 
         try:
             logging.debug('Bee %i is firing his machine gun. Bang bang!' % params['i'])
@@ -225,12 +241,8 @@ def _attack(params):
         
             logging.info(cmd)
             t1 = time.time()
-            stdin, stdout, stderr = client.exec_command(cmd, bufsize=1)
-            
-            # block until the command has returned an exit status
-            exit_status = stdout.channel.recv_exit_status()
-            logging.info('exit status: %s  instance: %s  time: %s seconds' % (exit_status, params['i'], time.time()-t1))
-            
+            stdin, stdout, stderr = _exec_command_blocking(client, cmd, ident)
+                        
             if params['use_siege']:
                 output = stderr.read()
                 logging.debug(output)
@@ -238,20 +250,20 @@ def _attack(params):
                 output = stdout.read()
             result = t.parse_output(output)
             if result is None:
-                msg = 'could not parse result from output (%(i)s/%(instance_id)s):'
-                logging.error(msg % params)
+                msg = 'could not parse result from output (%s):' % ident
+                logging.error(msg)
                 logging.error(output)
             else:
-                msg = 'finished testing: (%(i)s/%(instance_id)s)'
-                logging.info(msg % params)
+                msg = 'finished testing: (%s)' % ident
+                logging.info(msg)
             return result
 
         finally:
             client.close()
 
     except socket.error, e:
-        msg = 'encountered socket error (%(i)s/%(instance_id)s):'
-        logging.error(msg % params)
+        msg = 'encountered socket error (%s):' % ident
+        logging.error(msg)
         logging.exception(e)
         return e
 
