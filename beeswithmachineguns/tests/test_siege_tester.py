@@ -26,7 +26,7 @@ class SiegeTesterTestCase(unittest.TestCase):
         # since siege multiplies requests by concurrency, the tester 
         # divides the reps pre-emptively to achieve the desired number  
         self.assertEqual(
-            "siege -v -i -b -r 10 -c 10 \"http://magnetic.domdex.com/\" | siege_calc", 
+            "siege -v -i -b -r 10 -c 10 \"http://magnetic.domdex.com/\"", 
             t.get_command(100, 10, True, 'http://magnetic.domdex.com/')
             )
 

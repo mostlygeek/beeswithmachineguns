@@ -219,7 +219,9 @@ class SiegeTester(Tester):
         else:
             cmd.append('-f urls.txt')
 
-        cmd_line = ' '.join(cmd) + ' | siege_calc'
+        #temporarily disable siege_calc - causing errors in jenkins
+        #cmd_line = ' '.join(cmd) + ' | siege_calc'
+        cmd_line = ' '.join(cmd)
         return cmd_line
 
 
