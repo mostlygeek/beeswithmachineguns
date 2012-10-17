@@ -225,7 +225,7 @@ def _attack(params):
         
             logging.info(cmd)
             t1 = time.time()
-            stdin, stdout, stderr = client.exec_command(cmd)
+            stdin, stdout, stderr = client.exec_command(cmd, bufsize=1)
             
             # block until the command has returned an exit status
             exit_status = stdout.channel.recv_exit_status()
