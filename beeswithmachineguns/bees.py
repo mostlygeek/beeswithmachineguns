@@ -107,6 +107,11 @@ def up(count, group, zone, image_id, instance_type, username, key_name):
         key_name=key_name,
         security_groups=[group],
         instance_type=instance_type,
+        user_data="""
+#!/bin/bash
+pip install -qU --extra-index-url http://packages.mgnt.cc/pylibs beeswithmachineguns
+pip freeze | grep bees > /home/ec2-user/bees-version
+        """,
         placement=zone)
 
     logging.info('Waiting for bees to load their machine guns...')
