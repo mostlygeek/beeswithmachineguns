@@ -38,7 +38,12 @@ def get_pctiles(file_like):
         for pctile in (50, 66, 75, 80, 90, 95, 98, 99, 100):
             offset = int((float(pctile)/100)*cnt)-1
             cur.execute('SELECT secs FROM timings_o ORDER BY ROWID LIMIT 1 OFFSET %s' % offset)
-            pctiles[pctile] = cur.fetchall()[0][0]
+            try:
+                pctiles[pctile] = cur.fetchall()[0][0]
+            except IndexError:
+                print >> sys.stderr, 'ERROR: no result for [%s] percentile' % pctile
+                # keep on truckin
+                pctiles[pctile] = 0
         
         return pctiles
         
