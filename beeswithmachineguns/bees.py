@@ -115,7 +115,7 @@ def up(count, group, zone, image_id, instance_type, username, key_name):
 yum --enablerepo epel -y install gcc httpd-tools siege 
 curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
 pip install -qU --extra-index-url http://packages.mgnt.cc/pylibs beeswithmachineguns
-echo "connection = keep-alive" > /home/%s/.siegerc
+#echo "connection = keep-alive" > /home/%s/.siegerc
 touch /home/%s/ready
         """ % (username, username),
         placement=zone)
