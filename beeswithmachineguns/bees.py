@@ -112,9 +112,12 @@ def up(count, group, zone, image_id, instance_type, username, key_name):
         instance_type=instance_type,
         user_data="""
 #!/bin/bash
+sed 's,enabled *= *0,enabled=1,' /etc/yum.repos.d/epel.repo -i
+yum -y install gcc httpd-tools siege 
+curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
 pip install -qU --extra-index-url http://packages.mgnt.cc/pylibs beeswithmachineguns
-pip freeze | grep bees > /home/ec2-user/bees-version
-        """,
+touch /home/%s/ready
+        """ % username,
         placement=zone)
 
     logging.info('Waiting for bees to load their machine guns...')
