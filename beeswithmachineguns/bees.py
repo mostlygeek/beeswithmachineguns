@@ -35,7 +35,7 @@ import time
 import urllib2
 import urlparse
 
-import boto
+import boto, boto.ec2
 from boto.s3.key import Key
 import paramiko
 
@@ -50,20 +50,22 @@ def _read_server_list():
     instance_ids = []
 
     if not os.path.isfile(STATE_FILENAME):
-        return (None, None, None)
+        return (None, None, None, None)
 
     with open(STATE_FILENAME, 'r') as f:
+        region = f.readline().strip()
         username = f.readline().strip()
-        key_name = f.readline().strip()
+        key_name = f.readline().strip()        
         text = f.read()
         instance_ids = text.split('\n')
 
         logging.debug('Read %i bees from the roster.' % len(instance_ids))
 
-    return (username, key_name, instance_ids)
+    return (region, username, key_name, instance_ids)
 
-def _write_server_list(username, key_name, instances):
+def _write_server_list(region, username, key_name, instances):
     with open(STATE_FILENAME, 'w') as f:
+        f.write('%s\n' % region)
         f.write('%s\n' % username)
         f.write('%s\n' % key_name)
         f.write('\n'.join([instance.id for instance in instances]))
@@ -80,7 +82,7 @@ def up(count, group, zone, image_id, instance_type, username, key_name):
     """
     Startup the load testing server.
     """
-    existing_username, existing_key_name, instance_ids = _read_server_list()
+    existing_region, existing_username, existing_key_name, instance_ids = _read_server_list()
 
     if instance_ids:
         logging.warning('Bees are already assembled and awaiting orders.')
@@ -96,7 +98,8 @@ def up(count, group, zone, image_id, instance_type, username, key_name):
 
     logging.info('Connecting to the hive.')
 
-    ec2_connection = boto.connect_ec2()
+    region = zone[:-1]
+    ec2_connection = boto.ec2.connect_to_region(region)
 
     logging.info('Attempting to call up %i bees.' % count)
 
@@ -130,7 +133,7 @@ pip freeze | grep bees > /home/ec2-user/bees-version
 
     ec2_connection.create_tags(instance_ids, { "Name": "a bee!" })
 
-    _write_server_list(username, key_name, reservation.instances)
+    _write_server_list(region, username, key_name, reservation.instances)
 
     logging.info('The swarm has assembled %i bees.' % len(reservation.instances))
 
@@ -138,13 +141,13 @@ def report():
     """
     Report the status of the load testing servers.
     """
-    username, key_name, instance_ids = _read_server_list()
+    region, username, key_name, instance_ids = _read_server_list()
 
     if not instance_ids:
         logging.info('No bees have been mobilized.')
         return
 
-    ec2_connection = boto.connect_ec2()
+    ec2_connection = boto.ec2.connect_to_region(region)
 
     reservations = ec2_connection.get_all_instances(instance_ids=instance_ids)
 
@@ -160,7 +163,7 @@ def down():
     """
     Shutdown the load testing server.
     """
-    username, key_name, instance_ids = _read_server_list()
+    region, username, key_name, instance_ids = _read_server_list()
 
     if not instance_ids:
         logging.info('No bees have been mobilized.')
@@ -168,7 +171,7 @@ def down():
 
     logging.info('Connecting to the hive.')
 
-    ec2_connection = boto.connect_ec2()
+    ec2_connection = boto.ec2.connect_to_region(region)
 
     logging.info('Calling off the swarm.')
 
@@ -277,7 +280,7 @@ def attack(url, url_file, n, c, keepalive, output_type, use_siege):
     """
     Test the root url of this site.
     """
-    username, key_name, instance_ids = _read_server_list()
+    region, username, key_name, instance_ids = _read_server_list()
 
     if not instance_ids:
         logging.info('No bees are ready to attack.')
@@ -285,7 +288,7 @@ def attack(url, url_file, n, c, keepalive, output_type, use_siege):
 
     logging.info('Connecting to the hive.')
 
-    ec2_connection = boto.connect_ec2()
+    ec2_connection = boto.ec2.connect_to_region(region)
 
     logging.info('Assembling bees.')
 
