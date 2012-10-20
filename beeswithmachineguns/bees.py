@@ -78,7 +78,7 @@ def _get_pem_path(key):
 
 # Methods
 
-def up(count, group, zone, image_id, instance_type, username, key_name):
+def up(count, group, zone, image_id, instance_type, username, key_name, siege_keepalive):
     """
     Startup the load testing server.
     """
@@ -103,6 +103,21 @@ def up(count, group, zone, image_id, instance_type, username, key_name):
 
     logging.info('Attempting to call up %i bees.' % count)
 
+    user_data="""
+#!/bin/bash
+yum --enablerepo epel -y install gcc httpd-tools siege 
+curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
+pip install -qU --extra-index-url http://packages.mgnt.cc/pylibs beeswithmachineguns"""
+
+    if siege_keepalive:
+        user_data += """
+echo "connection = keep-alive" > /home/%(username)s/.siegerc"""
+
+    user_data += """
+touch /home/%(username)s/ready"""
+
+    user_data = user_data % {'username': username}   
+
     reservation = ec2_connection.run_instances(
         image_id=image_id,
         min_count=count,
@@ -110,14 +125,7 @@ def up(count, group, zone, image_id, instance_type, username, key_name):
         key_name=key_name,
         security_groups=[group],
         instance_type=instance_type,
-        user_data="""
-#!/bin/bash
-yum --enablerepo epel -y install gcc httpd-tools siege 
-curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
-pip install -qU --extra-index-url http://packages.mgnt.cc/pylibs beeswithmachineguns
-#echo "connection = keep-alive" > /home/%s/.siegerc
-touch /home/%s/ready
-        """ % (username, username),
+        user_data=user_data,
         placement=zone)
 
     logging.info('Waiting for bees to load their machine guns...')

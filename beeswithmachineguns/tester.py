@@ -198,6 +198,8 @@ class SiegeTester(Tester):
 
     def get_command(self, num_requests, concurrent_requests, is_keepalive, url):
         """
+        is_keepalive is currently ignored here, you instead have to specify
+        it in 'bees up'.
         """
         
         cmd = []
@@ -209,10 +211,6 @@ class SiegeTester(Tester):
         # which is different from how ab works, so we divide them pre-emptively
         cmd.append('-r %s' % max(1, (num_requests / concurrent_requests)))
         cmd.append('-c %s' % concurrent_requests)
-
-        if not is_keepalive:
-            raise NotImplementedError, \
-                'siege test driver currently requires keepalive as default'
 
         if url:
             cmd.append('"%s"' % url)
