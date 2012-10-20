@@ -15,12 +15,6 @@ class SiegeTesterTestCase(unittest.TestCase):
         """
         t = tester.SiegeTester()
 
-        self.assertRaises(
-                NotImplementedError
-              , t.get_command
-              , 3, 6, False, 'http://www.example.com/'
-              )
-
         # This looks weird but is intentional:
         # number of requests should be divided across the concurrency.
         # since siege multiplies requests by concurrency, the tester 
