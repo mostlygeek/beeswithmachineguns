@@ -12,6 +12,12 @@ def main(input_file, output_file):
     for d in csv.DictReader(input_file):
         for k,v in d.iteritems():
             columns.setdefault(k,[]).append(float(v))
+            
+    # sort all the columns in ascending order by concurrency
+    conc_idx = [(c, i) for i, c in enumerate(columns['concurrency'])]
+    sort_order = [i for c, i in sorted(conc_idx)]
+    for k in columns:
+        columns[k] = [columns[k][i] for i in sort_order]
 
     # shorthand to reuse x-axes in all plots
     x0, x1 = min(columns['concurrency']), max(columns['concurrency'])
