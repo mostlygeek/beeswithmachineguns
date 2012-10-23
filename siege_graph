@@ -4,6 +4,7 @@
 import csv
 import sys
 
+from matplotlib import rcParams
 import matplotlib.pyplot as plt
 
 def main(input_file, output_file):
@@ -22,11 +23,13 @@ def main(input_file, output_file):
     # shorthand to reuse x-axes in all plots
     x0, x1 = min(columns['concurrency']), max(columns['concurrency'])
 
+    rcParams['font.size'] = 10
+
     # plot response time
-    plt.subplot(2,1,1)    
-    plt.title('Response Time (ms)')
-    plt.xlabel('Concurrency')
-    plt.axis([x0, x1, 0, max(columns['pctile_99'])+100.0])
+    plt.subplot(3,1,1)    
+    #plt.title('Response Time (ms)')
+    plt.ylabel('Concurrency')
+    plt.axis([x0, x1, 0, max(columns['pctile_99'])*1.2])
     for col, fmt, label, linewidth in (
                      #('ms_per_request', 'k-'),
                      ('pctile_50', 'g-', 'median', 2.0),
@@ -40,10 +43,10 @@ def main(input_file, output_file):
     plt.legend(loc='upper left', prop={'size':'small'})
         
     # plot req/s
-    plt.subplot(4,1,4)    
-    plt.title('Requests Per Second')
-    plt.xlabel('Concurrency')
-    plt.axis([x0, x1, 0, max(columns['requests_per_second'])+1000.0])
+    plt.subplot(3,1,2)    
+    #plt.title('Requests Per Second')
+    plt.ylabel('Reqs/sec')
+    plt.axis([x0, x1, 0, max(columns['requests_per_second'])+5000.0])
     plt.plot(columns['concurrency'], columns['requests_per_second'], linewidth=2.0)
     plt.grid(True)
     
