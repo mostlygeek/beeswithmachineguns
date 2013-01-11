@@ -26,7 +26,7 @@ def main(input_file, output_file):
     rcParams['font.size'] = 10
 
     # plot response time
-    plt.subplot(3,1,1)    
+    plt.subplot(4,1,1)    
     plt.ylabel('Latency (ms)')
     plt.axis([x0, x1, 0, max(columns['pctile_99'])*1.2])
     for col, fmt, label, linewidth in (
@@ -42,7 +42,7 @@ def main(input_file, output_file):
     plt.legend(loc='upper left', prop={'size':'small'})
         
     # plot req/s
-    plt.subplot(3,1,2)    
+    plt.subplot(4,1,2)    
     #plt.title('Requests Per Second')
     plt.ylabel('Reqs/sec')
     plt.axis([x0, x1, 0, max(columns['requests_per_second'])+5000.0])
@@ -50,13 +50,24 @@ def main(input_file, output_file):
     plt.grid(True)
    
     # plot error rate
-    plt.subplot(6,1,6)    
+    plt.subplot(4,1,3)    
     #plt.title('Error Rate')
     plt.ylabel('Error %')
     plt.axis([x0, x1, 0, 100])
-    error_rates = map(lambda f,c: f/c, columns['failed_requests'], columns['complete_requests'])    
+    error_rates = map(lambda f,c: 100.0 * f/c, columns['failed_requests'], columns['complete_requests'])    
     plt.plot(columns['concurrency'], error_rates, 'r', linewidth=2.0)
     plt.grid(True)
+
+    # plot complete vs. failed requests
+    y0, y1 = 0, max(max(columns['complete_requests']), max(columns['failed_requests']))
+    plt.subplot(4,1,4)
+    plt.ylabel('# Req')
+    plt.axis([x0, x1, y0, y1])
+    plt.plot(columns['concurrency'], columns['complete_requests'], 'g-', linewidth=2.0, label='succeeded')
+    plt.plot(columns['concurrency'], columns['failed_requests'], 'r-', linewidth=2.0, label='failed')
+    plt.grid(True)
+    plt.legend(loc='upper left', prop={'size': 'small'})
+
 
     plt.savefig(output_file)    
     
