@@ -27,8 +27,7 @@ def main(input_file, output_file):
 
     # plot response time
     plt.subplot(3,1,1)    
-    #plt.title('Response Time (ms)')
-    plt.ylabel('Concurrency')
+    plt.ylabel('Latency (ms)')
     plt.axis([x0, x1, 0, max(columns['pctile_99'])*1.2])
     for col, fmt, label, linewidth in (
                      #('ms_per_request', 'k-'),
