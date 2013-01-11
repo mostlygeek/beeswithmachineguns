@@ -26,6 +26,7 @@ for line in results:
     status = int(line['status'])
     if status >= 400:
         failures += 1
+        continue
 
     time_start = float(line['time_start'])
     time_finish = float(line['time_finish'])
