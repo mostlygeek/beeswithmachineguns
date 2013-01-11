@@ -265,7 +265,45 @@ class SiegeTester(Tester):
 
         return TesterResult(**trd)
 
-            
+
+class WideloadTester(Tester):
+    """
+    Tester implementation for wideload.
+    """
+
+    def get_command(self, num_requests, concurrent_requests, is_keepalive, url):
+        """
+        """
+        cmd = []
+        cmd.append('wideload_wrap')
+        # wideload multiplies the number of reqs you want by the concurrency,
+        # which is different from how ab works, so we divide them pre-emptively
+        cmd.append('-r %s' % max(1, (num_requests / concurrent_requests)))
+        cmd.append('-c %s' % concurrent_requests)
+        cmd.append('-f 85')
+
+        if url:
+            raise Exception("wideload only works with a URLs file")
+        else:
+            cmd.append('urls.txt')
+
+        cmd_line = ' '.join(cmd)
+        return cmd_line
+
+
+    def parse_output(self, output):
+        """
+        """
+        trd = {}
+        m = self._parse_measure
+
+        for key in _result_keys:
+            pattern = '%s:\s+([0-9\.]+)' % key
+            trd[key] = float(m(pattern, output))
+
+        return TesterResult(**trd)
+
+
 
 if __name__=='__main__':
     import sys

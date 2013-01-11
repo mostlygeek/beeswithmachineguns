@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+
+"""
+this script runs after a wideload run, and computes results for bees based
+on the information in wideload's "detailed-results.csv" file.
+"""
+
+import csv
+import sys
+
+results = csv.reader(file('detailed-results.csv'))
+headers = results.next()
+
+failures = 0
+num_bytes = 0
+
+events = []
+timings = []
+
+absolute_start = sys.maxint
+absolute_end = 0
+
+for line in results:
+    line = dict(zip(headers, line))
+
+    status = int(line['status'])
+    if status >= 400:
+        failures += 1
+
+    time_start = float(line['time_start'])
+    time_finish = float(line['time_finish'])
+
+    absolute_start = min(time_start, absolute_start)
+    absolute_end = max(time_finish, absolute_end)
+
+    events.append((1, time_start))
+    events.append((-1, time_finish))
+
+    timings.append(1000 * (time_finish - time_start))
+
+    num_bytes += int(line['bytes_received'])
+
+events.sort(key=lambda ev: ev[1])
+timings.sort()
+
+# compute concurrency by scanning the "events" list
+# and tracking the running sum of the first field
+concurrency = []
+counter = 0
+for event in events:
+    counter += event[0]
+    concurrency.append(counter)
+
+# print summary statistics for bees to pick up
+print "ms_per_request: %.2f" % (sum(timings) / len(timings))
+print "pctile_50: %.2f" % timings[len(timings) / 2]
+print "pctile_75: %.2f" % timings[int(len(timings) * 0.75)]
+print "pctile_90: %.2f" % timings[int(len(timings) * 0.90)]
+print "pctile_95: %.2f" % timings[int(len(timings) * 0.95)]
+print "pctile_99: %.2f" % timings[int(len(timings) * 0.99)]
+print "concurrency: %.2f" % (float(sum(concurrency)) / len(concurrency))
+print "time_taken: %.2f" % (absolute_end - absolute_start)
+print "requests_per_second: %.2f" % (len(timings) / (absolute_end - absolute_start))
+print "complete_requests: %d" % len(timings)
+print "failed_requests: %d" % failures
+print "non_2xx_responses: %d" % failures
+print "total_transferred: %d" % num_bytes

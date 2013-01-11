@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Wrap a wideload invocation, then immediately run
+# wideload_calc to provide detailed results to bees
+
+rm -f detailed-results.csv
+wideload $@ && wideload_calc

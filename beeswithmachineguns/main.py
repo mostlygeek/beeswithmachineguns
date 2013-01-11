@@ -101,9 +101,12 @@ commands:
     attack_group.add_option('--keepalive', metavar="KEEPALIVE",
                             action='store_true', dest='keepalive', default=False,
                             help='Whether or not to use ab keepalive (default: False)')
-    attack_group.add_option('--use-siege', metavar="USE_SIEGE",
-                            action='store_true', dest='use_siege', default=False,
-                            help='Whether or not to use siege instead of ab (default: False)')
+    attack_group.add_option('--use-wideload', action='store_const', dest='engine', const='wideload',
+                            help='Use wideload to generate load.')
+    attack_group.add_option('--use-siege', action='store_const', dest='engine', const='siege',
+                            help='Use siege to generate load.')
+    attack_group.add_option('--use-ab', action='store_const', dest='engine', const='ab',
+                            help='Use ab to generate load (default).')
 
     parser.add_option_group(attack_group)
 
@@ -159,7 +162,7 @@ commands:
             parser.error('To run an attack you need to specify either a url with -u or a file with -f.')
 
 
-        bees.attack(url, url_file, options.number, options.concurrent, options.keepalive, options.output_type, options.use_siege)
+        bees.attack(url, url_file, options.number, options.concurrent, options.keepalive, options.output_type, options.engine)
     elif command == 'down':
         bees.down()
     elif command == 'report':

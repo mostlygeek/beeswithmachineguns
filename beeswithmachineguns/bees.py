@@ -39,7 +39,7 @@ import boto, boto.ec2
 from boto.s3.key import Key
 import paramiko
 
-from tester import ABTester, SiegeTester, TesterResult, get_aggregate_result
+from tester import ABTester, SiegeTester, TesterResult, WideloadTester, get_aggregate_result
 
 
 STATE_FILENAME = os.path.expanduser('~/.bees')
@@ -105,7 +105,17 @@ def up(count, group, zone, image_id, instance_type, username, key_name, siege_ke
 
     user_data="""
 #!/bin/bash
-yum --enablerepo epel -y install gcc httpd-tools siege 
+
+(cat << EOF
+[magnetic]
+name=magnetic
+baseurl=http://packages.mgnt.cc/yum/
+gpgcheck=0
+enabled=0
+EOF
+) > /etc/yum.repos.d/magnetic.repo
+
+yum --enablerepo magnetic --enablerepo epel -y install gcc httpd-tools siege wideload
 curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
 pip install -qU --extra-index-url http://packages.mgnt.cc/pylibs beeswithmachineguns"""
 
@@ -249,7 +259,12 @@ def _attack(params):
         try:
             logging.debug('Bee %i is firing his machine gun. Bang bang!' % params['i'])
             
-            t = (params['use_siege'] and SiegeTester()) or ABTester()
+            engines = {
+                'ab': ABTester,
+                'siege': SiegeTester,
+                'wideload': WideloadTester,
+            }
+            t = engines[params['engine']]()
     
             cmd = t.get_command(
                 params['num_requests'],
@@ -262,7 +277,7 @@ def _attack(params):
             t1 = time.time()
             stdin, stdout, stderr = _exec_command_blocking(client, cmd, ident)
                         
-            if params['use_siege']:
+            if params['engine'] == 'siege':
                 output = stderr.read()
                 logging.debug(output)
             else:
@@ -287,7 +302,7 @@ def _attack(params):
         return e
 
 
-def attack(url, url_file, n, c, keepalive, output_type, use_siege):
+def attack(url, url_file, n, c, keepalive, output_type, engine):
     """
     Test the root url of this site.
     """
@@ -398,7 +413,7 @@ def attack(url, url_file, n, c, keepalive, output_type, use_siege):
             'username': username,
             'key_name': key_name,
             'keepalive': keepalive,
-            'use_siege': use_siege
+            'engine': engine,
         })
 
     logging.info('Stinging URL so it will be cached for the attack.')
