@@ -103,22 +103,14 @@ def up(count, group, zone, image_id, instance_type, username, key_name, siege_ke
 
     logging.info('Attempting to call up %i bees.' % count)
 
-    user_data="""
-#!/bin/bash
+    user_data="""#!/bin/sh
 
-(cat << EOF
-[magnetic]
-name=magnetic
-baseurl=http://packages.mgnt.cc/yum/
-gpgcheck=0
-enabled=0
-EOF
-) > /etc/yum.repos.d/magnetic.repo
+set -e -x
 
-yum --enablerepo magnetic --enablerepo epel -y install gcc httpd-tools siege wideload
-curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
-pip install -qU --extra-index-url http://packages.mgnt.cc/pylibs beeswithmachineguns
-apt-get install gcc siege apache2-utils"""
+echo 'starting'
+apt-get --yes --quiet update
+apt-get --yes --quiet install gcc siege apache2-utils
+echo 'installing stuff'"""
 
     if siege_keepalive:
         user_data += """
