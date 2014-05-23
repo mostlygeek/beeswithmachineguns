@@ -55,7 +55,7 @@ def _read_server_list():
     with open(STATE_FILENAME, 'r') as f:
         region = f.readline().strip()
         username = f.readline().strip()
-        key_name = f.readline().strip()        
+        key_name = f.readline().strip()
         text = f.read()
         instance_ids = text.split('\n')
 
@@ -117,7 +117,8 @@ EOF
 
 yum --enablerepo magnetic --enablerepo epel -y install gcc httpd-tools siege wideload
 curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
-pip install -qU --extra-index-url http://packages.mgnt.cc/pylibs beeswithmachineguns"""
+pip install -qU --extra-index-url http://packages.mgnt.cc/pylibs beeswithmachineguns
+apt-get install gcc siege apache2-utils"""
 
     if siege_keepalive:
         user_data += """
@@ -126,7 +127,7 @@ echo "connection = keep-alive" > /home/%(username)s/.siegerc"""
     user_data += """
 touch /home/%(username)s/ready"""
 
-    user_data = user_data % {'username': username}   
+    user_data = user_data % {'username': username}
 
     reservation = ec2_connection.run_instances(
         image_id=image_id,
@@ -227,10 +228,10 @@ def _attack(params):
     """
     logging.info('Bee %i is joining the swarm.' % params['i'])
     logging.debug('Bee %i params: %s' % (params['i'], params))
-    
+
     # for logging
     ident = '%s/%s' % (params['i'], params['instance_id'])
-    
+
     try:
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -248,7 +249,7 @@ def _attack(params):
                 _exec_command_blocking(client, cmd, ident)
             else:
                 logging.debug('found file!')
-            
+
             if params['url_file'].endswith('.gz'):
                 logging.debug('gunzipping to urls.txt')
                 _exec_command_blocking(client, 'gunzip -c %s > urls.txt' % params['url_file'], ident)
@@ -258,25 +259,25 @@ def _attack(params):
 
         try:
             logging.debug('Bee %i is firing his machine gun. Bang bang!' % params['i'])
-            
+
             engines = {
                 'ab': ABTester,
                 'siege': SiegeTester,
                 'wideload': WideloadTester,
             }
             t = engines[params['engine']]()
-    
+
             cmd = t.get_command(
                 params['num_requests'],
                 params['concurrent_requests'],
                 params['keepalive'],
                 params['url']
                 )
-        
-            logging.info(cmd)
+
+
             t1 = time.time()
             stdin, stdout, stderr = _exec_command_blocking(client, cmd, ident)
-                        
+
             if params['engine'] == 'siege':
                 output = stderr.read()
                 logging.debug(output)
@@ -338,7 +339,7 @@ def attack(url, url_file, n, c, keepalive, output_type, engine):
     # if there's a url file, it's time to:
     # 1) verify it's already present on the worker instances
     # 2a) if not, copy it to s3
-    # 2b) and then pull it down from s3 to the workers 
+    # 2b) and then pull it down from s3 to the workers
     if url_file:
 
         s3 = boto.connect_s3()
@@ -369,13 +370,13 @@ def attack(url, url_file, n, c, keepalive, output_type, engine):
                 f.close()
             local_hash = md5.hexdigest()
             logging.debug('hash of local url file is %s' % local_hash)
-            
+
             s3_name = os.path.basename(url_file)
             lt_bucket = s3.get_bucket(bucket_name)
             logging.debug('s3 bucket is %s' % lt_bucket)
             key = lt_bucket.get_key(s3_name)
             logging.debug('key is %s' % key)
-    
+
             if key:
                 remote_hash = key.etag.replace('"','')
                 # if etag matches local hash, nothing to be done.
@@ -394,10 +395,10 @@ def attack(url, url_file, n, c, keepalive, output_type, engine):
                 key.set_contents_from_filename(url_file)
                 key.set_acl('public-read') # FIXME security
                 logging.info('...upload complete')
-    
+
         url_file = s3_name
         logging.info('using url file: %s' % url_file)
-            
+
     params = []
 
     for i, instance in enumerate(instances):
@@ -419,15 +420,15 @@ def attack(url, url_file, n, c, keepalive, output_type, engine):
     logging.info('Stinging URL so it will be cached for the attack.')
 
     # Ping url so it will be cached for testing
-    if url:
-        urllib2.urlopen(url, timeout=5)
+    #if url:
+    #    #urllib2.urlopen(url, timeout=5)
 
     # Spin up processes for connecting to EC2 instances
     pool = Pool(len(params))
     results = pool.map(_attack, params)
 
     logging.debug('Offensive complete.')
-    
+
     timeout_bees = [r for r in results if r is None]
     exception_bees = [r for r in results if type(r) == socket.error]
     complete_bees = [r for r in results if r is not None and type(r) != socket.error]
@@ -441,7 +442,7 @@ def attack(url, url_file, n, c, keepalive, output_type, engine):
         output_type = 'csv'
 
     if output_type=='csv':
-        # it is presumed that csv output should be suppressed when some 
+        # it is presumed that csv output should be suppressed when some
         # workers failed.
         if not timeout_bees and not exception_bees:
             print >> sys.stdout, ','.join(map(str,aggregate_result))
@@ -449,6 +450,6 @@ def attack(url, url_file, n, c, keepalive, output_type, engine):
             logging.warning('test results invalid - one or more clients failed')
     else:
         aggregate_result.print_text(sys.stdout)
-    
+
 
     logging.info('The swarm is awaiting new orders.')

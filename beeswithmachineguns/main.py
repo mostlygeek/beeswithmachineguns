@@ -70,14 +70,14 @@ commands:
                         action='store', dest='zone', type='string', default='us-east-1d',
                         help="The availability zone to start the instances in (default: us-east-1d).")
     up_group.add_option('-i', '--instance',  metavar="INSTANCE",  nargs=1,
-                        action='store', dest='instance', type='string', default='ami-ff17fb96',
+                        action='store', dest='instance', type='string', default='ami-b08b6cd8',
                         help="The instance-id to use for each server from (default: ami-ff17fb96).")
     up_group.add_option('-t', '--instance_type',  metavar="INSTANCE_TYPE",  nargs=1,
                         action='store', dest='instance_type', type='string', default='t1.micro',
                         help="The ec2 instance type to use for each server (default: t1.micro).")
     up_group.add_option('-l', '--login',  metavar="LOGIN",  nargs=1,
-                        action='store', dest='login', type='string', default='newsapps',
-                        help="The ssh username name to use to connect to the new servers (default: newsapps).")
+                        action='store', dest='login', type='string', default='ubuntu',
+                        help="The ssh username name to use to connect to the new servers (default: ubuntu).")
 
     parser.add_option_group(up_group)
 
@@ -111,11 +111,11 @@ commands:
     parser.add_option_group(attack_group)
 
     output_group = OptionGroup(parser, "output")
-    
+
     output_group.add_option('-o', '--output', metavar="OUTPUT_TYPE", nargs=1,
                         action='store', dest='output_type', type='string',
                         help="specify \'csv\' to output a csv row.  specify \'csvh\' to output csv headers prior to the csv row.")
-    output_group.add_option('-v', '--verbose', metavar="VERBOSE", 
+    output_group.add_option('-v', '--verbose', metavar="VERBOSE",
                         action='store_true', dest='verbose', default=False,
                         help="whether to log verbosely to stderr.")
 
@@ -127,7 +127,7 @@ commands:
         parser.error('Please enter a command.')
 
     command = args[0]
-    
+
     import logging
     if options.verbose:
         level=logging.DEBUG
@@ -144,7 +144,7 @@ commands:
 
         bees.up(options.servers, options.group, options.zone, options.instance, options.instance_type, options.login, options.key, options.keepalive)
     elif command == 'attack':
-        
+
         url, url_file = None, None
         if options.url_file:
             if not options.url_file.startswith('s3://'):
