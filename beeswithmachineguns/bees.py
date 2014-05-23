@@ -232,6 +232,14 @@ def _attack(params):
             username=params['username'],
             key_filename=_get_pem_path(params['key_name']))
 
+        if params['engine'] == 'siege':
+            stdin, stdout, stderr = _exec_command_blocking(client, 'stat siege_calc', ident)
+            if 'No such file or directory' in stderr.read():
+                sftp = client.open_sftp()
+                sftp.put('siege_calc','siege_calc')
+                sftp.chmod('siege_calc',0774)
+                sftp.close()
+
         if params['url_file']:
             logging.debug('checking for url file %s' % params['url_file'])
             stdin, stdout, stderr = _exec_command_blocking(client, 'stat %s' % params['url_file'], ident)

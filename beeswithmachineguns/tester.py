@@ -9,13 +9,13 @@ import re
 
 class Tester(object):
     """
-    Abstract base class for tester implementations. 
+    Abstract base class for tester implementations.
     """
 
     def get_command(self, num_requests, concurrent_requests, is_keepalive, url):
         """
         Generate a command line to run a test using this tester.
-        
+
         @param num_requests: number of requests this tester should issue
         @type num_requests: int
         @param concurrent_requests:  how many requests to issue at a time
@@ -28,16 +28,16 @@ class Tester(object):
         @rtype: str
         """
         raise NotImplementedError
-        
+
 
     def parse_output(self, output):
         """
         Create a L{TesterResult} by extracting values from the output of the tester
         command.
-        
-        This method will return None if the supplied output does not contain 
+
+        This method will return None if the supplied output does not contain
         sufficient data to generate a meaningful result.
-        
+
         @param output: the captured output (stdout) from the tester command
         @type output: str
         @return: L{TesterResult} with the extracted data, or None
@@ -48,15 +48,15 @@ class Tester(object):
     def _parse_measure(self, expression, content, default=''):
         """
         Regular expression scraping helper
-        
+
         @param expression: regular expression
         @param content: the output to scrape
         @param default: if the expression doesn't capture anything, return this
         """
         s = re.search(expression, content)
         return (s is not None and s.group(1)) or default
-        
-        
+
+
 _result_keys = [
     'concurrency'
   , 'time_taken'
@@ -76,17 +76,17 @@ _result_keys = [
 class TesterResult(namedtuple('TesterResult', _result_keys)):
     """
     Test result container, which works for both individual and aggregated
-    results.  The individual fields map directly to ab results.  All values 
+    results.  The individual fields map directly to ab results.  All values
     are stored as floats.
     """
-    
+
     def print_text(self, out):
         """
         Print summarized load-testing result to console.
-        
+
         @param out: file-like, open for writing, into which output will be printed.
         """
-    
+
         print >> out, 'Concurrency Level:\t%i' % self.concurrency
         print >> out, 'Complete requests:\t%i' % self.complete_requests
         print >> out, 'Failed requests:\t%i' % self.failed_requests
@@ -99,29 +99,29 @@ class TesterResult(namedtuple('TesterResult', _result_keys)):
         print >> out, '90%% response time:\t%i [ms] (mean)' % self.pctile_90
         print >> out, '95%% response time:\t%i [ms] (mean)' % self.pctile_95
         print >> out, '99%% response time:\t%i [ms] (mean)' % self.pctile_99
-    
+
 
 def get_aggregate_result(results):
     """
     Given a sequence of TestResults, generate a single aggregate TestResult.
     """
-    
+
     ar = {}
-    
-    for k in _result_keys:        
+
+    for k in _result_keys:
         if k=='ms_per_request' or k.startswith('pctile'):
             # weighted mean.
             ar[k] = sum([(getattr(r,k) * r.complete_requests) for r in results]) /  sum([r.complete_requests for r in results])
             continue
         elif k=='time_taken':
-            # time taken using max instead of sum...not precise.  
+            # time taken using max instead of sum...not precise.
             # do not use in further aggregation.
             func = max
         else:
             # everything else is just summed
             func = sum
         ar[k] = func([getattr(r,k) for r in results])
-    
+
     return TesterResult(**ar)
 
 
@@ -147,12 +147,12 @@ class ABTester(Tester):
 
         cmd_line = ' '.join(cmd)
         return cmd_line
-        
+
 
     def parse_output(self, output):
         """
         """
-        trd = {}        
+        trd = {}
         m = self._parse_measure
 
         trd['ms_per_request'] = \
@@ -161,7 +161,7 @@ class ABTester(Tester):
         if not trd['ms_per_request']:
             # problem with results...return None
             return None
-        
+
         trd['concurrency'] = \
             float(m('Concurrency\ Level:\s+([0-9]+)', output))
 
@@ -201,7 +201,7 @@ class SiegeTester(Tester):
         is_keepalive is currently ignored here, you instead have to specify
         it in 'bees up'.
         """
-        
+
         cmd = []
         cmd.append('siege')
         cmd.append('-v')
@@ -217,14 +217,14 @@ class SiegeTester(Tester):
         else:
             cmd.append('-f urls.txt')
 
-        cmd_line = ' '.join(cmd) + ' | siege_calc'
+        cmd_line = ' '.join(cmd) + ' | ./siege_calc'
         return cmd_line
 
 
     def parse_output(self, output):
         """
         """
-        trd = {}        
+        trd = {}
         m = self._parse_measure
 
         rt_secs = m('Response\ time:\s+([0-9.]+)\ secs', output)
@@ -308,4 +308,4 @@ class WideloadTester(Tester):
 if __name__=='__main__':
     import sys
     SiegeTester().parse_timings(sys.stdin)
-    
+
