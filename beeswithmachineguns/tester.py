@@ -196,7 +196,7 @@ class SiegeTester(Tester):
     """
 
 
-    def get_command(self, num_requests, concurrent_requests, is_keepalive, url):
+    def get_command(self, num_requests, concurrent_requests, is_keepalive, url, time):
         """
         is_keepalive is currently ignored here, you instead have to specify
         it in 'bees up'.
@@ -207,10 +207,13 @@ class SiegeTester(Tester):
         cmd.append('-v')
         cmd.append('-i')
         cmd.append('-b')
-        # siege multiplies the number of reqs you want by the concurrency,
-        # which is different from how ab works, so we divide them pre-emptively
-        cmd.append('-r %s' % max(1, (num_requests / concurrent_requests)))
         cmd.append('-c %s' % concurrent_requests)
+        if time:
+            cmd.append('-t%s' % time)
+        else:
+            # siege multiplies the number of reqs you want by the concurrency,
+            # which is different from how ab works, so we divide them pre-emptively
+            cmd.append('-r %s' % max(1, (num_requests / concurrent_requests)))
 
         if url:
             cmd.append('"%s"' % url)

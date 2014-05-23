@@ -71,7 +71,7 @@ commands:
                         help="The availability zone to start the instances in (default: us-east-1d).")
     up_group.add_option('-i', '--instance',  metavar="INSTANCE",  nargs=1,
                         action='store', dest='instance', type='string', default='ami-b08b6cd8',
-                        help="The instance-id to use for each server from (default: ami-ff17fb96).")
+                        help="The instance-id to use for each server from (default: ami-b08b6cd8).")
     up_group.add_option('-t', '--instance_type',  metavar="INSTANCE_TYPE",  nargs=1,
                         action='store', dest='instance_type', type='string', default='t1.micro',
                         help="The ec2 instance type to use for each server (default: t1.micro).")
@@ -107,6 +107,9 @@ commands:
                             help='Use siege to generate load.')
     attack_group.add_option('--use-ab', action='store_const', dest='engine', const='ab',
                             help='Use ab to generate load (default).')
+    attack_group.add_option('-w', '--time', metavar="TIME", nargs=1,
+                            action='store', dest='time', type='string',
+                            help="the time to run the test 60S, 1M, 5H")
 
     parser.add_option_group(attack_group)
 
@@ -162,7 +165,7 @@ commands:
             parser.error('To run an attack you need to specify either a url with -u or a file with -f.')
 
 
-        bees.attack(url, url_file, options.number, options.concurrent, options.keepalive, options.output_type, options.engine)
+        bees.attack(url, url_file, options.number, options.concurrent, options.keepalive, options.output_type, options.engine, options.time)
     elif command == 'down':
         bees.down()
     elif command == 'report':

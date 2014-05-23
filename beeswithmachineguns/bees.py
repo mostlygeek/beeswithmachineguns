@@ -271,7 +271,8 @@ def _attack(params):
                 params['num_requests'],
                 params['concurrent_requests'],
                 params['keepalive'],
-                params['url']
+                params['url'],
+                params['time']
                 )
 
 
@@ -303,7 +304,7 @@ def _attack(params):
         return e
 
 
-def attack(url, url_file, n, c, keepalive, output_type, engine):
+def attack(url, url_file, n, c, keepalive, output_type, engine, time):
     """
     Test the root url of this site.
     """
@@ -415,6 +416,7 @@ def attack(url, url_file, n, c, keepalive, output_type, engine):
             'key_name': key_name,
             'keepalive': keepalive,
             'engine': engine,
+            'time' : time,
         })
 
     logging.info('Stinging URL so it will be cached for the attack.')
