@@ -335,7 +335,7 @@ def attack(url, url_file, n, c, keepalive, output_type, engine, time):
     logging.debug( 'Each of %i bees will fire %s rounds, %s at a time.' % (instance_count, requests_per_instance, connections_per_instance))
 
     # default s3 bucket when we use it for url files
-    bucket_name = 'com.domdex.loadtest'
+    bucket_name = 'haw-bees'
 
     # if there's a url file, it's time to:
     # 1) verify it's already present on the worker instances
