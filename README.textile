@@ -26,14 +26,13 @@ or, if you must:
 easy_install beeswithmachineguns
 </pre>
 
-h2. Installation for developers (w/ virtualenv + virtualenvwrapper)
+h2. Installation for developers (w/ virtualenv)
 
 <pre>
-git clone git://github.com/newsapps/beeswithmachineguns.git
+git clone git://github.com/mostlygeek/beeswithmachineguns.git
 cd beeswithmachineguns
-mkvirtualenv --no-site-packages bees
-easy_install pip
-pip install -r requirements.txt
+virtualenv .
+./bin/pip install -r requirements.txt
 </pre>
 
 h2. Configuring EC2 credentials
@@ -45,8 +44,10 @@ h2. Usage
 A typical bees session looks something like this:
 
 <pre>
-bees up -s 4 -g public -k frakkingtoasters
+bees up -s 4 -g bees -k frakkingtoasters
 bees attack -n 10000 -c 250 -u http://www.ournewwebbyhotness.com/
+bees attack --use-siege -w 30s -c 5 -u 'https://www.mysite.com POST {"thisis":"json"}'
+bees attack --use-siege -w 30s -c 5 -u 'https://www.mysite.com POST formencoded=true&var=2'
 bees down
 </pre>
 
