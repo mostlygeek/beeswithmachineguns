@@ -12,3 +12,7 @@ beeswithmachineguns.egg-info/requires.txt
 beeswithmachineguns.egg-info/top_level.txt
 .project
 .pydevproject
+bin/
+lib/
+include/
+.Python

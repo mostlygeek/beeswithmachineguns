@@ -160,7 +160,7 @@ touch /home/%(username)s/ready"""
 
         logging.info('Bee %s is ready for the attack.' % instance.id)
 
-    ec2_connection.create_tags(instance_ids, { "Name": "a bee!" })
+    ec2_connection.create_tags(instance_ids, { "Name": "load testing bee (beeswithmachineguns)!" })
 
     _write_server_list(region, username, key_name, reservation.instances)
 
